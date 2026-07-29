@@ -1,13 +1,11 @@
-import fs from 'fs';
-import path from 'path';
-import crypto from 'crypto';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
 const sharedApi = require('./shared-api.js');
 
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzSTmI2W9J58MOC_fUEQad9_IZ0FlHRE2dklrY-YzAvS99_sF_nEjNMDUkl0pnq7G87/exec";
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   try {
     // CORS Headers
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -116,6 +114,17 @@ export default async function handler(req, res) {
       const direct_path = path.join(API_MOCK_DIR, `${last_segment}.json`);
       if (fs.existsSync(direct_path)) return sendFile(direct_path);
 
+      if (path_lower.includes("/api/config/google-sheet-url")) {
+        const CONFIG_FILE = path.join(DIR, "config.json");
+        let url = "";
+        if (fs.existsSync(CONFIG_FILE)) {
+          try {
+            url = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8")).googleSheetUrl || "";
+          } catch(e) {}
+        }
+        return res.status(200).json({ url });
+      }
+
       if (path_lower.includes("/api/admin/users")) {
         return sharedApi.handleUsersGet(req, res, { loadUsers });
       }
@@ -142,6 +151,17 @@ export default async function handler(req, res) {
     let body_data = req.body || {};
     if (typeof body_data === 'string') {
       try { body_data = JSON.parse(body_data); } catch (e) { body_data = {}; }
+    }
+
+    if (path_lower.includes("/api/config/google-sheet-url")) {
+      const CONFIG_FILE = path.join(DIR, "config.json");
+      let cfg = {};
+      if (fs.existsSync(CONFIG_FILE)) {
+        try { cfg = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8")); } catch(e) {}
+      }
+      cfg.googleSheetUrl = body_data.url;
+      fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2));
+      return res.status(200).json({ success: true });
     }
 
     if (path_lower.includes("coupons/validate")) {

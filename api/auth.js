@@ -15,7 +15,7 @@ function loadUsers() {
   return [{name: "Admin User", email: "admin@smartiqo.com", password: "Admin@7772", role: "admin"}];
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS Headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
