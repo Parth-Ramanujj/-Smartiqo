@@ -94,15 +94,37 @@ module.exports = async function handler(req, res) {
       const uniqueId = (orderId || "item") + "_" + Date.now();
       const fileName = `${prefix}_${uniqueId}${ext}`;
       
-      const os = require('os');
-      const filePath = path.join(os.tmpdir(), fileName);
+      let publicUrl = "";
+      
       try {
-        fs.writeFileSync(filePath, buffer);
-      } catch (e) {
-        console.warn("Could not write preview to tmp:", e);
+        // Try uploading to Catbox for permanent free hosting
+        const formData = new FormData();
+        formData.append('reqtype', 'fileupload');
+        formData.append('fileToUpload', new Blob([buffer]), fileName);
+        
+        const catboxRes = await fetch('https://catbox.moe/user/api.php', { 
+          method: 'POST', 
+          body: formData 
+        });
+        
+        if (catboxRes.ok) {
+          publicUrl = await catboxRes.text();
+        } else {
+          throw new Error("Catbox upload failed");
+        }
+      } catch (err) {
+        console.warn("Failed to upload to Catbox, falling back to /tmp:", err);
+        // Fallback to Vercel's ephemeral /tmp
+        const os = require('os');
+        const filePath = path.join(os.tmpdir(), fileName);
+        try {
+          fs.writeFileSync(filePath, buffer);
+          publicUrl = `/api/preview/${fileName}`;
+        } catch (e) {
+          console.warn("Could not write preview to tmp:", e);
+        }
       }
 
-      const publicUrl = `/api/preview/${fileName}`;
       return res.status(200).json({ success: true, url: publicUrl, fileName });
     }
 
