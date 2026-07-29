@@ -272,61 +272,243 @@ async function getImagePreviewDataUrl(itemData) {
   });
 }
 
-// ─── Helper to escape PDF string characters ──────────────────────────────────
-function escapePdfText(str) {
-  return String(str || "")
-    .replace(/\\/g, "\\\\")
-    .replace(/\(/g, "\\(")
-    .replace(/\)/g, "\\)");
+// ─── Intercept the real Quote PDF from the app's Download PDF button ─────────
+// The React app uses jsPDF to generate a professional Quote.pdf. We intercept
+// the blob when it's created via URL.createObjectURL, upload it to the server,
+// and store the URL so the Google Sheets payload gets a link to the real PDF.
+let _lastCapturedPdfUrl = null;
+let _lastCapturedPdfBlob = null;
+
+(function interceptPdfDownload() {
+  const originalCreateObjectURL = URL.createObjectURL;
+  URL.createObjectURL = function(blob) {
+    const blobUrl = originalCreateObjectURL.call(URL, blob);
+    // Detect PDF blobs (the app creates blob URLs for Quote.pdf download)
+    if (blob && blob.type === "application/pdf") {
+      console.log("[CartSync] 📄 Intercepted PDF blob:", blob.size, "bytes");
+      _lastCapturedPdfBlob = blob;
+      // Upload the PDF to the server in background
+      uploadPdfBlobToServer(blob).then(url => {
+        if (url) {
+          _lastCapturedPdfUrl = url;
+          console.log("[CartSync] ✅ PDF uploaded to server:", url);
+          syncQuoteToGoogleSheet(url); // Trigger Google Sheet sync immediately
+        }
+      });
+    }
+    return blobUrl;
+  };
+
+  // Also intercept <a>.click() downloads to capture the Quote.pdf by filename
+  const origClick = HTMLAnchorElement.prototype.click;
+  HTMLAnchorElement.prototype.click = function() {
+    if (this.download && this.download.toLowerCase().includes("quote") && this.download.toLowerCase().endsWith(".pdf")) {
+      console.log("[CartSync] 📄 Detected Quote.pdf download click");
+      // The blob URL is in this.href — fetch it and upload
+      if (this.href && this.href.startsWith("blob:")) {
+        fetch(this.href).then(r => r.blob()).then(blob => {
+          _lastCapturedPdfBlob = blob;
+          uploadPdfBlobToServer(blob).then(url => {
+            if (url) {
+              _lastCapturedPdfUrl = url;
+              console.log("[CartSync] ✅ PDF captured from download:", url);
+              syncQuoteToGoogleSheet(url); // Trigger Google Sheet sync immediately
+            }
+          });
+        }).catch(e => console.warn("[CartSync] Could not capture download PDF:", e));
+      }
+    }
+    return origClick.call(this);
+  };
+})();
+
+// Automatically sync the generated Quote configuration to Google Sheets
+async function syncQuoteToGoogleSheet(pdfUrl) {
+  try {
+    const state = window.__store?.getState();
+    if (!state || !state.selectionData || !state.selectionData.selectionData) return;
+    
+    const selState = state.selectionData;
+    const totalPrice = selState.totalPrice || 0;
+    
+    const cartData = {};
+    selState.selectionData.forEach(step => {
+      if (!step || !step.title) return;
+      const t = step.title.toLowerCase();
+      if (t.includes("panel")) cartData.panel = step.options?.[0];
+      else if (t.includes("material")) cartData.material = step.options?.[0];
+      else if (t.includes("size")) cartData.size = step.options?.[0];
+      else if (t.includes("accessor")) cartData.accessories = [step]; 
+      else if (t.includes("icon")) cartData.icons = [step];
+      else if (t.includes("color")) cartData.color = [step];
+      else if (t.includes("technol")) cartData.technology = step.options?.[0];
+    });
+
+    const quoteItem = {
+      id: "QUOTE-" + Math.floor(Math.random() * 90000 + 10000),
+      orderName: "Generated Quote",
+      customProductName: "Custom Quote",
+      quantity: 1,
+      totalPrice: totalPrice,
+      cartData: cartData,
+      dropped: []
+    };
+
+    const payload = await buildFullItemPayload(quoteItem, quoteItem.id, false);
+    payload.status = "Quote Downloaded"; 
+    if (pdfUrl) {
+      payload.flowPdf = pdfUrl;
+      payload.pdf = pdfUrl;
+    }
+    
+    console.log("[CartSync] Sending Quote to Google Sheet:", payload);
+    await sendSinglePayloadToGAS(payload, quoteItem);
+    console.log("[CartSync] ✅ Quote synced successfully!");
+  } catch (e) {
+    console.warn("[CartSync] Failed to sync Quote:", e);
+  }
 }
 
-// ─── Generate PDF Data URI for the Design Flow ────────────────────────────────
-function generateFlowPdfDataUrl(
-  customName,
-  details,
-  orderId,
-  priceStr,
-  dateStr,
-) {
+async function uploadPdfBlobToServer(blob) {
   try {
-    const textLines = [
-      "SmartiQo Custom Panel Order Flow Summary",
-      "Order ID: " + orderId,
-      "Date: " + dateStr,
-      "Product Name: " + customName,
-      "Price: " + priceStr,
-      "Flow Details: " + details,
-    ];
-
-    let streamContent =
-      "BT\n/F1 16 Tf\n50 750 Td\n(" +
-      escapePdfText(textLines[0]) +
-      ") Tj\n/F1 11 Tf\n";
-    let yOffset = -25;
-    for (let i = 1; i < textLines.length; i++) {
-      streamContent +=
-        "0 " + yOffset + " Td\n(" + escapePdfText(textLines[i]) + ") Tj\n";
-      yOffset = -18;
+    // Convert blob to base64 data URL
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    const res = await fetch("/api/upload-preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dataUrl, type: "pdf", orderId: "quote_" + Date.now() }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.url) return window.location.origin + data.url;
     }
-    streamContent += "ET";
-
-    const pdfDoc =
-      "%PDF-1.4\n1 0 obj <</Type /Catalog /Pages 2 0 R>> endobj\n2 0 obj <</Type /Pages /Kids [3 0 R] /Count 1>> endobj\n3 0 obj <</Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources <</Font <</F1 5 0 R>>>> >> endobj\n4 0 obj <</Length " +
-      streamContent.length +
-      ">> stream\n" +
-      streamContent +
-      "\nendstream\nendobj\n5 0 obj <</Type /Font /Subtype /Type1 /BaseFont /Helvetica>> endobj\nxref\n0 6\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\n0000000246 00000 n\n0000000300 00000 n\ntrailer <</Size 6 /Root 1 0 R>>\nstartxref\n400\n%%EOF";
-
-    const b64 =
-      typeof btoa === "function"
-        ? btoa(unescape(encodeURIComponent(pdfDoc)))
-        : Buffer.from(pdfDoc, "utf-8").toString("base64");
-
-    return "data:application/pdf;base64," + b64;
   } catch (e) {
-    console.warn("[CartSync] PDF generation warning:", e);
+    console.warn("[CartSync] Failed to upload PDF blob:", e);
+  }
+  return null;
+}
+
+// ─── Fallback: Generate PDF with jsPDF (if app PDF is not captured) ──────────
+async function generateFallbackPdfDataUrl(customName, details, orderId, priceStr, dateStr, screenshotDataUrl, user) {
+  // Try loading jsPDF dynamically
+  if (typeof window.jspdf === "undefined") {
+    await new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js";
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    }).catch(() => null);
+  }
+
+  if (typeof window.jspdf === "undefined") {
+    console.warn("[CartSync] jsPDF not available for fallback PDF");
     return "";
-  }}
+  }
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF("p", "mm", "a4");
+    const pageW = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    const contentW = pageW - margin * 2;
+    let y = 20;
+
+    // Header bar
+    doc.setFillColor(0, 122, 82);
+    doc.rect(0, 0, pageW, 18, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.text("SmartiQo - Panel Specification", pageW / 2, 12, { align: "center" });
+
+    y = 28;
+
+    // Order Info Section
+    doc.setTextColor(60, 60, 60);
+    doc.setFontSize(10);
+    doc.text("Order ID: " + orderId, margin, y);
+    doc.text("Date: " + (dateStr || new Date().toISOString().split("T")[0]), pageW - margin, y, { align: "right" });
+    y += 6;
+
+    if (user && user.email) {
+      doc.text("Customer: " + (user.name || "N/A") + " (" + user.email + ")", margin, y);
+      y += 6;
+    }
+
+    doc.text("Product: " + (customName || "Custom Panel"), margin, y);
+    y += 6;
+    doc.text("Price: " + priceStr, margin, y);
+    y += 10;
+
+    // Separator line
+    doc.setDrawColor(0, 122, 82);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, pageW - margin, y);
+    y += 8;
+
+    // Panel Screenshot
+    if (screenshotDataUrl && screenshotDataUrl.startsWith("data:image")) {
+      try {
+        const imgFormat = screenshotDataUrl.includes("jpeg") ? "JPEG" : "PNG";
+        const imgW = contentW * 0.7;
+        const imgH = imgW * 0.6;
+        const imgX = margin + (contentW - imgW) / 2;
+        
+        // Red border around image
+        doc.setDrawColor(204, 36, 27);
+        doc.setLineWidth(1);
+        doc.roundedRect(imgX - 2, y - 2, imgW + 4, imgH + 4, 3, 3, "S");
+        
+        doc.addImage(screenshotDataUrl, imgFormat, imgX, y, imgW, imgH);
+        y += imgH + 12;
+      } catch (e) {
+        y += 5;
+      }
+    }
+
+    // Configuration Snapshot
+    doc.setFillColor(247, 249, 252);
+    doc.setDrawColor(217, 227, 239);
+    const configBoxH = 50;
+    doc.roundedRect(margin, y, contentW, configBoxH, 4, 4, "FD");
+    
+    // Green accent bar
+    doc.setFillColor(0, 122, 82);
+    doc.roundedRect(margin + 3, y + 3, 3, configBoxH - 6, 1.5, 1.5, "F");
+
+    doc.setTextColor(24, 64, 55);
+    doc.setFontSize(12);
+    doc.text("Configuration Snapshot", margin + 10, y + 10);
+
+    doc.setFontSize(9);
+    doc.setTextColor(76, 86, 106);
+    const detailLines = details.split(" | ");
+    let configY = y + 18;
+    detailLines.forEach(line => {
+      if (configY < y + configBoxH - 5) {
+        doc.text("• " + line.trim(), margin + 10, configY);
+        configY += 6;
+      }
+    });
+
+    y += configBoxH + 10;
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text("Generated by SmartiQo Panel Designer", pageW / 2, 285, { align: "center" });
+
+    return doc.output("datauristring");
+  } catch (e) {
+    console.warn("[CartSync] Fallback PDF generation failed:", e);
+    return "";
+  }
+}
 
 // ─── Build full item payload with all My Cart details ────────────────────────
 async function buildFullItemPayload(item, orderId, isOrderConfirmation) {
@@ -378,16 +560,22 @@ async function buildFullItemPayload(item, orderId, isOrderConfirmation) {
 
   const imgPreview = await getImagePreviewDataUrl(item);
   const dateStr = item.createdAt || new Date().toISOString();
-  const flowPdfData = generateFlowPdfDataUrl(
-    customName,
-    detailsSummary,
-    orderId,
-    priceStr,
-    dateStr,
-  );
 
   // Get logged-in user info
   const user = await getLoggedInUser();
+
+  // PDF: Use the real Quote PDF intercepted from the app if available
+  let flowPdfData = "";
+  if (_lastCapturedPdfUrl) {
+    flowPdfData = _lastCapturedPdfUrl;
+    console.log("[CartSync] Using intercepted real Quote PDF:", flowPdfData);
+  } else {
+    // Fallback: Generate a professional PDF with jsPDF
+    flowPdfData = await generateFallbackPdfDataUrl(
+      customName, detailsSummary, orderId, priceStr, dateStr, imgPreview, user
+    );
+    console.log("[CartSync] Generated fallback PDF");
+  }
 
   return {
     orderId: orderId,

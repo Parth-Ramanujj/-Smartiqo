@@ -1,4 +1,19 @@
+const fs = require('fs');
+const path = require('path');
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzSTmI2W9J58MOC_fUEQad9_IZ0FlHRE2dklrY-YzAvS99_sF_nEjNMDUkl0pnq7G87/exec";
+
+function loadUsers() {
+  const usersFile = path.join(process.cwd(), 'users.json');
+  if (fs.existsSync(usersFile)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(usersFile, "utf-8"));
+      if (data && Array.isArray(data.users)) return data.users;
+    } catch (e) {
+      console.warn("Failed to read users.json:", e);
+    }
+  }
+  return [{name: "Admin User", email: "admin@smartiqo.com", password: "Admin@7772", role: "admin"}];
+}
 
 export default async function handler(req, res) {
   // CORS Headers
@@ -10,7 +25,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const path_lower = req.url.toLowerCase();
+  const path_lower = (req.url || "").toLowerCase();
 
   if (req.method === 'GET') {
     if (path_lower.includes("providers")) {
@@ -35,12 +50,24 @@ export default async function handler(req, res) {
                       cookies.includes('next-auth.session-token=secure_smartiqo_session_token_xyz');
 
       if (is_auth) {
+        // Try to get user name and email from cookies
+        let email = process.env.AUTH_USERNAME || "info@smartiqo.com";
+        let name = "Admin User";
+        let role = "admin";
+        
+        const cookiePairs = cookies.split(';').map(c => c.trim().split('='));
+        for (const [k, v] of cookiePairs) {
+          if (k === 'auth_email') email = decodeURIComponent(v);
+          if (k === 'auth_name') name = decodeURIComponent(v);
+          if (k === 'auth_role') role = decodeURIComponent(v);
+        }
+
         return res.status(200).json({
           user: {
             id: "user1",
-            name: "Admin User",
-            email: process.env.AUTH_USERNAME || "info@smartiqo.com",
-            role: "admin",
+            name: name,
+            email: email,
+            role: role,
             isPremium: true,
             parentUserId: null,
           },
@@ -59,52 +86,60 @@ export default async function handler(req, res) {
       res.setHeader('Set-Cookie', [
         'session_token=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax',
         'next-auth.session-token=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax',
-        'logged_in=; Path=/; Max-Age=0; SameSite=Lax'
+        'logged_in=; Path=/; Max-Age=0; SameSite=Lax',
+        'auth_email=; Path=/; Max-Age=0; SameSite=Lax',
+        'auth_name=; Path=/; Max-Age=0; SameSite=Lax',
+        'auth_role=; Path=/; Max-Age=0; SameSite=Lax'
       ]);
       return res.status(200).json({ url: "/Login" });
     }
 
     let body = req.body || {};
+    // Fallback parsing if Vercel didn't parse it (e.g. if content-type missing)
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch(e){}
+    }
+    
     let email = body.email || "";
     let password = body.password || "";
 
-    const auth_username = process.env.AUTH_USERNAME || "info@smartiqo.com";
-    const auth_password = process.env.AUTH_PASSWORD || "Smartiqo@7772";
-
-    let is_valid = false;
-    if (email === auth_username && password === auth_password) {
-      is_valid = true;
-    } else if (email && password) {
-      try {
-        const resp = await fetch(GAS_URL + "?action=getUsers");
-        const data = await resp.json();
-        if (data && data.users) {
-          const user = data.users.find(u => String(u.email) === String(email) && String(u.password) === String(password));
-          if (user) is_valid = true;
-        }
-      } catch (e) {
-        console.error("Failed to check auth with GAS", e);
-      }
+    const users = loadUsers();
+    const foundUser = users.find(u => u.email === email && u.password === password);
+    let user = foundUser;
+    
+    // Fallback to hardcoded env credentials
+    if (!user && email === (process.env.AUTH_USERNAME || "info@smartiqo.com") && password === (process.env.AUTH_PASSWORD || "Smartiqo@7772")) {
+      user = { name: "Admin", email: email, role: "admin" };
     }
 
     if (path_lower.includes("precheck")) {
-      return res.status(200).json({ code: is_valid ? "OK" : "INVALID" });
+      return res.status(200).json({ code: user ? "OK" : "INVALID" });
     }
 
     if (path_lower.includes("signin") || path_lower.includes("callback")) {
-      if (is_valid) {
+      if (user) {
         const host = req.headers.host || "localhost:8080";
         const proto = req.headers['x-forwarded-proto'] || "http";
-        const absolute_url = `${proto}://${host}/`;
+        
+        let callbackUrl = body.callbackUrl || `${proto}://${host}/`;
+        if (callbackUrl && !callbackUrl.startsWith("http")) {
+          callbackUrl = `${proto}://${host}${callbackUrl.startsWith('/') ? '' : '/'}${callbackUrl}`;
+        }
 
         res.setHeader('Set-Cookie', [
           'session_token=secure_smartiqo_session_token_xyz; Path=/; HttpOnly; SameSite=Lax',
           'next-auth.session-token=secure_smartiqo_session_token_xyz; Path=/; HttpOnly; SameSite=Lax',
-          'logged_in=yes; Path=/; SameSite=Lax'
+          'logged_in=yes; Path=/; SameSite=Lax',
+          `auth_email=${user.email}; Path=/; SameSite=Lax`,
+          `auth_name=${encodeURIComponent(user.name || "User")}; Path=/; SameSite=Lax`,
+          `auth_role=${user.role || "user"}; Path=/; SameSite=Lax`
         ]);
-        return res.status(200).json({ url: absolute_url });
+        
+        // Return `{ ok: true }` so next-auth client triggers redirect
+        return res.status(200).json({ ok: true, url: callbackUrl, error: null });
       } else {
-        return res.status(401).json({ error: "Invalid credentials" });
+        // Return 200 with ok:false instead of 401 so next-auth client shows error instead of network error
+        return res.status(200).json({ ok: false, error: "CredentialsSignin", url: null });
       }
     }
 
