@@ -26,6 +26,58 @@ function getCachedUsers(loadUsers) {
   return globalUsersCache;
 }
 
+async function syncUsersToGithub(users) {
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) return; // Skip if no token is set
+  try {
+    const repo = process.env.VERCEL_GIT_REPO_OWNER && process.env.VERCEL_GIT_REPO_SLUG
+      ? `${process.env.VERCEL_GIT_REPO_OWNER}/${process.env.VERCEL_GIT_REPO_SLUG}`
+      : "Parth-Ramanujj/-Smartiqo";
+      
+    const apiUrl = `https://api.github.com/repos/${repo}/contents/users.json`;
+    
+    // 1. Get current SHA
+    const getRes = await fetch(apiUrl, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "User-Agent": "Smartiqo-Vercel-App"
+      }
+    });
+    
+    if (!getRes.ok) {
+      console.warn("GitHub API Fetch failed:", getRes.statusText);
+      return;
+    }
+    
+    const getData = await getRes.json();
+    
+    // 2. Put new content
+    const content = Buffer.from(JSON.stringify({ users }, null, 2)).toString("base64");
+    
+    const putRes = await fetch(apiUrl, {
+      method: "PUT",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "User-Agent": "Smartiqo-Vercel-App",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: "chore(users): persist users.json via Vercel Admin API",
+        content: content,
+        sha: getData.sha || undefined
+      })
+    });
+    
+    if (putRes.ok) {
+      console.log("Successfully persisted users.json to GitHub!");
+    } else {
+      console.warn("Failed to PUT users.json to GitHub:", putRes.statusText);
+    }
+  } catch (err) {
+    console.error("Failed to sync users to GitHub:", err);
+  }
+}
+
 function getCookieUsers(req) {
   let cookieUsers = [];
   const cookies = (req && req.headers && req.headers.cookie) || '';
@@ -54,7 +106,7 @@ function handleUsersGet(req, res, { loadUsers }) {
   }
 }
 
-function handleUsersPost(req, res, { loadUsers, saveUsers, body }) {
+async function handleUsersPost(req, res, { loadUsers, saveUsers, body }) {
   try {
     const diskUsers = getCachedUsers(loadUsers);
     let cookieUsers = getCookieUsers(req);
@@ -68,12 +120,14 @@ function handleUsersPost(req, res, { loadUsers, saveUsers, body }) {
       name: body.name,
       email: body.email,
       password: body.password,
-      role: body.role || "user"
+      role: body.role || "user",
+      id: "user_" + Date.now()
     };
     cookieUsers.push(newUser);
     
     globalUsersCache = [...diskUsers, ...cookieUsers]; // Update cache for current container
     saveUsers(globalUsersCache); // Try disk (fails on Vercel)
+    await syncUsersToGithub(globalUsersCache); // Push to GitHub for persistence
     
     const cookieValue = encodeURIComponent(JSON.stringify(cookieUsers));
     res.setHeader('Set-Cookie', `mock_users=${cookieValue}; Path=/; Max-Age=31536000; SameSite=Lax`);
@@ -84,7 +138,7 @@ function handleUsersPost(req, res, { loadUsers, saveUsers, body }) {
   }
 }
 
-function handleUsersDelete(req, res, { loadUsers, saveUsers, email }) {
+async function handleUsersDelete(req, res, { loadUsers, saveUsers, email }) {
   try {
     let diskUsers = getCachedUsers(loadUsers);
     let cookieUsers = getCookieUsers(req);
@@ -95,6 +149,7 @@ function handleUsersDelete(req, res, { loadUsers, saveUsers, email }) {
     
     globalUsersCache = [...diskUsers, ...cookieUsers];
     saveUsers(globalUsersCache);
+    await syncUsersToGithub(globalUsersCache); // Push to GitHub for persistence
     
     const cookieValue = encodeURIComponent(JSON.stringify(cookieUsers));
     res.setHeader('Set-Cookie', `mock_users=${cookieValue}; Path=/; Max-Age=31536000; SameSite=Lax`);
