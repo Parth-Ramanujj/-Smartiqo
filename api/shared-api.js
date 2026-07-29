@@ -26,55 +26,30 @@ function getCachedUsers(loadUsers) {
   return globalUsersCache;
 }
 
-async function syncUsersToGithub(users) {
-  const token = process.env.GITHUB_TOKEN;
-  if (!token) return; // Skip if no token is set
+const JSONBLOB_URL = "https://jsonblob.com/api/jsonBlob/019fb04c-ee09-7c87-83e5-00d705a115fe";
+
+async function fetchRemoteUsers() {
   try {
-    const repo = process.env.VERCEL_GIT_REPO_OWNER && process.env.VERCEL_GIT_REPO_SLUG
-      ? `${process.env.VERCEL_GIT_REPO_OWNER}/${process.env.VERCEL_GIT_REPO_SLUG}`
-      : "Parth-Ramanujj/-Smartiqo";
-      
-    const apiUrl = `https://api.github.com/repos/${repo}/contents/users.json`;
-    
-    // 1. Get current SHA
-    const getRes = await fetch(apiUrl, {
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "User-Agent": "Smartiqo-Vercel-App"
-      }
-    });
-    
-    if (!getRes.ok) {
-      console.warn("GitHub API Fetch failed:", getRes.statusText);
-      return;
-    }
-    
-    const getData = await getRes.json();
-    
-    // 2. Put new content
-    const content = Buffer.from(JSON.stringify({ users }, null, 2)).toString("base64");
-    
-    const putRes = await fetch(apiUrl, {
+    const res = await fetch(JSONBLOB_URL);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.users || null;
+  } catch(e) {
+    console.error("JsonBlob fetch error:", e);
+    return null;
+  }
+}
+
+async function saveRemoteUsers(users) {
+  try {
+    await fetch(JSONBLOB_URL, {
       method: "PUT",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "User-Agent": "Smartiqo-Vercel-App",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        message: "chore(users): persist users.json via Vercel Admin API",
-        content: content,
-        sha: getData.sha || undefined
-      })
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({ users })
     });
-    
-    if (putRes.ok) {
-      console.log("Successfully persisted users.json to GitHub!");
-    } else {
-      console.warn("Failed to PUT users.json to GitHub:", putRes.statusText);
-    }
-  } catch (err) {
-    console.error("Failed to sync users to GitHub:", err);
+    console.log("Successfully persisted users to JsonBlob!");
+  } catch(e) {
+    console.error("JsonBlob save error:", e);
   }
 }
 
@@ -88,9 +63,15 @@ function getCookieUsers(req) {
   return cookieUsers;
 }
 
-function handleUsersGet(req, res, { loadUsers }) {
+async function handleUsersGet(req, res, { loadUsers }) {
   try {
-    const diskUsers = getCachedUsers(loadUsers);
+    // 1. Fetch remote users to guarantee persistence
+    const remoteUsers = await fetchRemoteUsers();
+    
+    // 2. Fallback to cache/disk if remote fails
+    const diskUsers = remoteUsers ? remoteUsers : getCachedUsers(loadUsers);
+    if (remoteUsers) globalUsersCache = remoteUsers; // update cache
+    
     const cookieUsers = getCookieUsers(req);
     
     // Merge, ensuring no duplicates by email
@@ -108,7 +89,8 @@ function handleUsersGet(req, res, { loadUsers }) {
 
 async function handleUsersPost(req, res, { loadUsers, saveUsers, body }) {
   try {
-    const diskUsers = getCachedUsers(loadUsers);
+    const remoteUsers = await fetchRemoteUsers();
+    const diskUsers = remoteUsers ? remoteUsers : getCachedUsers(loadUsers);
     let cookieUsers = getCookieUsers(req);
     
     const allUsers = [...diskUsers, ...cookieUsers];
@@ -127,7 +109,7 @@ async function handleUsersPost(req, res, { loadUsers, saveUsers, body }) {
     
     globalUsersCache = [...diskUsers, ...cookieUsers]; // Update cache for current container
     saveUsers(globalUsersCache); // Try disk (fails on Vercel)
-    await syncUsersToGithub(globalUsersCache); // Push to GitHub for persistence
+    await saveRemoteUsers(globalUsersCache); // Push to JsonBlob for persistence
     
     const cookieValue = encodeURIComponent(JSON.stringify(cookieUsers));
     res.setHeader('Set-Cookie', `mock_users=${cookieValue}; Path=/; Max-Age=31536000; SameSite=Lax`);
@@ -140,7 +122,8 @@ async function handleUsersPost(req, res, { loadUsers, saveUsers, body }) {
 
 async function handleUsersDelete(req, res, { loadUsers, saveUsers, email }) {
   try {
-    let diskUsers = getCachedUsers(loadUsers);
+    const remoteUsers = await fetchRemoteUsers();
+    let diskUsers = remoteUsers ? remoteUsers : getCachedUsers(loadUsers);
     let cookieUsers = getCookieUsers(req);
     
     // Delete from both
@@ -149,7 +132,7 @@ async function handleUsersDelete(req, res, { loadUsers, saveUsers, email }) {
     
     globalUsersCache = [...diskUsers, ...cookieUsers];
     saveUsers(globalUsersCache);
-    await syncUsersToGithub(globalUsersCache); // Push to GitHub for persistence
+    await saveRemoteUsers(globalUsersCache); // Push to JsonBlob for persistence
     
     const cookieValue = encodeURIComponent(JSON.stringify(cookieUsers));
     res.setHeader('Set-Cookie', `mock_users=${cookieValue}; Path=/; Max-Age=31536000; SameSite=Lax`);
@@ -307,5 +290,7 @@ module.exports = {
   handleLogsRead,
   handleLogsClear,
   getGlobalUsersCache,
-  setGlobalUsersCache
+  setGlobalUsersCache,
+  fetchRemoteUsers,
+  saveRemoteUsers
 };

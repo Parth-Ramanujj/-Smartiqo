@@ -151,7 +151,20 @@ module.exports = async function handler(req, res) {
     let email = body.email || "";
     let password = body.password || "";
 
-    const users = loadUsers(req);
+    // 1. Fetch from JsonBlob permanent storage
+    let remoteUsers = [];
+    if (sharedApi.fetchRemoteUsers) {
+      const fetched = await sharedApi.fetchRemoteUsers();
+      if (fetched) remoteUsers = fetched;
+    }
+    
+    // 2. Fallback / Merge with disk/cookie users
+    const localUsers = loadUsers(req);
+    const users = [...remoteUsers];
+    for (const u of localUsers) {
+      if (!users.find(ru => ru.email === u.email)) users.push(u);
+    }
+
     const foundUser = users.find(u => u.email === email && u.password === password);
     let user = foundUser;
     
