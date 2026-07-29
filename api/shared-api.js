@@ -17,9 +17,18 @@ function sendJson(res, status, data) {
 }
 
 // User Management
+let globalUsersCache = null;
+
+function getCachedUsers(loadUsers) {
+  if (!globalUsersCache) {
+    globalUsersCache = loadUsers();
+  }
+  return globalUsersCache;
+}
+
 function handleUsersGet(req, res, { loadUsers }) {
   try {
-    const users = loadUsers().map(u => ({ name: u.name, email: u.email, role: u.role }));
+    const users = getCachedUsers(loadUsers).map(u => ({ name: u.name, email: u.email, role: u.role }));
     return sendJson(res, 200, { users });
   } catch (err) {
     return handleError(res, err);
@@ -28,7 +37,7 @@ function handleUsersGet(req, res, { loadUsers }) {
 
 function handleUsersPost(req, res, { loadUsers, saveUsers, body }) {
   try {
-    const users = loadUsers();
+    const users = getCachedUsers(loadUsers);
     if (users.find(u => u.email === body.email)) {
       return sendJson(res, 400, { error: "User exists" });
     }
@@ -39,6 +48,7 @@ function handleUsersPost(req, res, { loadUsers, saveUsers, body }) {
       role: body.role || "user"
     });
     saveUsers(users);
+    globalUsersCache = users; // Update cache
     return sendJson(res, 200, { success: true });
   } catch (err) {
     return handleError(res, err);
@@ -47,13 +57,21 @@ function handleUsersPost(req, res, { loadUsers, saveUsers, body }) {
 
 function handleUsersDelete(req, res, { loadUsers, saveUsers, email }) {
   try {
-    let users = loadUsers();
+    let users = getCachedUsers(loadUsers);
     users = users.filter(u => u.email !== email);
     saveUsers(users);
+    globalUsersCache = users; // Update cache
     return sendJson(res, 200, { success: true });
   } catch (err) {
     return handleError(res, err);
   }
+}
+
+function getGlobalUsersCache() {
+  return globalUsersCache;
+}
+function setGlobalUsersCache(users) {
+  globalUsersCache = users;
 }
 
 // Order Management
@@ -194,5 +212,7 @@ module.exports = {
   handleIconsGet,
   handleLogsWrite,
   handleLogsRead,
-  handleLogsClear
+  handleLogsClear,
+  getGlobalUsersCache,
+  setGlobalUsersCache
 };

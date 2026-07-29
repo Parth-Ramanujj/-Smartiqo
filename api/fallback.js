@@ -61,6 +61,11 @@ module.exports = async function handler(req, res) {
     let api_path = parsedUrl.pathname.replace(/^\/+/, '');
     const path_lower = req.url.toLowerCase();
 
+    if (path_lower.includes("/api/auth")) {
+      const authHandler = require('./auth.js');
+      return authHandler(req, res);
+    }
+
     if (req.method === 'GET') {
       if (api_path === "api/icons") {
         const staticPath = path.join(API_MOCK_DIR, "icons.json");

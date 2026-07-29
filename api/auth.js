@@ -2,17 +2,31 @@ const fs = require('fs');
 const path = require('path');
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzSTmI2W9J58MOC_fUEQad9_IZ0FlHRE2dklrY-YzAvS99_sF_nEjNMDUkl0pnq7G87/exec";
 
+const sharedApi = require('./shared-api.js');
+
 function loadUsers() {
-  const usersFile = path.join(process.cwd(), 'users.json');
-  if (fs.existsSync(usersFile)) {
-    try {
-      const data = JSON.parse(fs.readFileSync(usersFile, "utf-8"));
-      if (data && Array.isArray(data.users)) return data.users;
-    } catch (e) {
-      console.warn("Failed to read users.json:", e);
+  const diskLoader = () => {
+    const usersFile = path.join(process.cwd(), 'users.json');
+    if (fs.existsSync(usersFile)) {
+      try {
+        const data = JSON.parse(fs.readFileSync(usersFile, "utf-8"));
+        if (data && Array.isArray(data.users)) return data.users;
+      } catch (e) {
+        console.warn("Failed to read users.json:", e);
+      }
     }
+    return [{name: "Admin User", email: "admin@smartiqo.com", password: "Admin@7772", role: "admin"}];
+  };
+
+  if (sharedApi.getGlobalUsersCache) {
+    const cache = sharedApi.getGlobalUsersCache();
+    if (cache) return cache;
+    const users = diskLoader();
+    sharedApi.setGlobalUsersCache(users);
+    return users;
   }
-  return [{name: "Admin User", email: "admin@smartiqo.com", password: "Admin@7772", role: "admin"}];
+  
+  return diskLoader();
 }
 
 module.exports = async function handler(req, res) {
