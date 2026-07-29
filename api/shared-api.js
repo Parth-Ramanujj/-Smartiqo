@@ -152,7 +152,7 @@ function handleLogsWrite(req, res, { logFilePath, body, userAgent }) {
       userAgent: userAgent || ""
     };
     const line = JSON.stringify(entry) + "\n";
-    fs.appendFileSync(logFilePath, line, "utf-8");
+    try { fs.appendFileSync(logFilePath, line, "utf-8"); } catch(e) { /* ignore on Vercel */ }
     console.log(`[LOG] ${entry.level}: ${entry.message}`);
     return sendJson(res, 200, { success: true });
   } catch (err) {
@@ -176,7 +176,7 @@ function handleLogsRead(req, res, { logFilePath }) {
 
 function handleLogsClear(req, res, { logFilePath }) {
   try {
-    fs.writeFileSync(logFilePath, "", "utf-8");
+    try { fs.writeFileSync(logFilePath, "", "utf-8"); } catch(e) { /* ignore on Vercel */ }
     return sendJson(res, 200, { success: true });
   } catch (err) {
     return handleError(res, err);

@@ -29,14 +29,20 @@ module.exports = async function handler(req, res) {
       }
       return [];
     };
-    const saveUsers = (users) => fs.writeFileSync(USERS_FILE, JSON.stringify({users}, null, 2));
+    const saveUsers = (users) => {
+      try { fs.writeFileSync(USERS_FILE, JSON.stringify({users}, null, 2)); }
+      catch(e) { console.warn("Vercel FS Read-only: Could not write users.json"); }
+    };
 
     const ORDERS_FILE = path.join(DIR, "orders.json");
     const loadOrders = () => {
       if (fs.existsSync(ORDERS_FILE)) return JSON.parse(fs.readFileSync(ORDERS_FILE, "utf-8"));
       return [];
     };
-    const saveOrders = (orders) => fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2));
+    const saveOrders = (orders) => {
+      try { fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2)); }
+      catch(e) { console.warn("Vercel FS Read-only: Could not write orders.json"); }
+    };
 
     const SYNC_LOG_FILE = path.join(DIR, "logs", "cart-sync.log");
     const META_FILE = path.join(DIR, "icon", "dynamic", "My_Icons", "metadata.json");
@@ -160,7 +166,11 @@ module.exports = async function handler(req, res) {
         try { cfg = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8")); } catch(e) {}
       }
       cfg.googleSheetUrl = body_data.url;
-      fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2));
+      try {
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2));
+      } catch (e) {
+        console.warn("Vercel FS Read-only: Could not write config.json");
+      }
       return res.status(200).json({ success: true });
     }
 
