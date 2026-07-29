@@ -1,8 +1,30 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzSTmI2W9J58MOC_fUEQad9_IZ0FlHRE2dklrY-YzAvS99_sF_nEjNMDUkl0pnq7G87/exec";
 
 const sharedApi = require('./shared-api.js');
+
+const SECRET_KEY = process.env.SECRET_KEY || "smartiqo_super_secret_fallback_key_2026";
+
+function signToken(payload) {
+  const base64Payload = Buffer.from(JSON.stringify(payload)).toString('base64');
+  const signature = crypto.createHmac('sha256', SECRET_KEY).update(base64Payload).digest('hex');
+  return `${base64Payload}.${signature}`;
+}
+
+function verifyToken(token) {
+  if (!token) return null;
+  const parts = token.split('.');
+  if (parts.length !== 2) return null;
+  const signature = crypto.createHmac('sha256', SECRET_KEY).update(parts[0]).digest('hex');
+  if (signature !== parts[1]) return null;
+  try {
+    return JSON.parse(Buffer.from(parts[0], 'base64').toString('utf8'));
+  } catch (e) {
+    return null;
+  }
+}
 
 function loadUsers(req) {
   const diskLoader = () => {
@@ -75,28 +97,25 @@ module.exports = async function handler(req, res) {
 
     if (path_lower.includes("session")) {
       const cookies = req.headers.cookie || '';
-      const is_auth = cookies.includes('session_token=secure_smartiqo_session_token_xyz') || 
-                      cookies.includes('next-auth.session-token=secure_smartiqo_session_token_xyz');
+      
+      // Parse all cookies into an object for easier lookup
+      const cookieObj = {};
+      const cookiePairs = cookies.split(';').map(c => c.trim().split('='));
+      for (const [k, v] of cookiePairs) {
+        if (k) cookieObj[k] = decodeURIComponent(v || "");
+      }
 
-      if (is_auth) {
-        // Try to get user name and email from cookies
-        let email = process.env.AUTH_USERNAME || "info@smartiqo.com";
-        let name = "Admin User";
-        let role = "admin";
-        
-        const cookiePairs = cookies.split(';').map(c => c.trim().split('='));
-        for (const [k, v] of cookiePairs) {
-          if (k === 'auth_email') email = decodeURIComponent(v);
-          if (k === 'auth_name') name = decodeURIComponent(v);
-          if (k === 'auth_role') role = decodeURIComponent(v);
-        }
+      const tokenStr = cookieObj['session_token'] || cookieObj['next-auth.session-token'];
+      const decodedUser = verifyToken(tokenStr);
 
+      if (decodedUser) {
+        // Security Fix: Rely ONLY on the cryptographically signed token for backend identity!
         return res.status(200).json({
           user: {
-            id: "user1",
-            name: name,
-            email: email,
-            role: role,
+            id: decodedUser.id || "user1",
+            name: decodedUser.name,
+            email: decodedUser.email,
+            role: decodedUser.role,
             isPremium: true,
             parentUserId: null,
           },
@@ -155,13 +174,23 @@ module.exports = async function handler(req, res) {
           callbackUrl = `${proto}://${host}${callbackUrl.startsWith('/') ? '' : '/'}${callbackUrl}`;
         }
 
+        // Security Fix: Generate a secure, cryptographically signed token instead of a hardcoded string
+        const secureToken = signToken({ 
+          email: user.email, 
+          name: user.name, 
+          role: user.role,
+          id: user.id || "user1"
+        });
+
+        // We STILL set the plain cookies (logged_in, auth_email, auth_role) because the static React frontend 
+        // reads them directly to render the UI. However, the backend /session endpoint will now ignore them.
         res.setHeader('Set-Cookie', [
-          'session_token=secure_smartiqo_session_token_xyz; Path=/; HttpOnly; SameSite=Lax',
-          'next-auth.session-token=secure_smartiqo_session_token_xyz; Path=/; HttpOnly; SameSite=Lax',
-          'logged_in=yes; Path=/; SameSite=Lax',
-          `auth_email=${user.email}; Path=/; SameSite=Lax`,
-          `auth_name=${encodeURIComponent(user.name || "User")}; Path=/; SameSite=Lax`,
-          `auth_role=${user.role || "user"}; Path=/; SameSite=Lax`
+          `session_token=${secureToken}; Path=/; HttpOnly; SameSite=Lax`,
+          `next-auth.session-token=${secureToken}; Path=/; HttpOnly; SameSite=Lax`,
+          `logged_in=yes; Path=/; SameSite=Lax`,
+          `auth_email=${encodeURIComponent(user.email)}; Path=/; SameSite=Lax`,
+          `auth_name=${encodeURIComponent(user.name)}; Path=/; SameSite=Lax`,
+          `auth_role=${encodeURIComponent(user.role)}; Path=/; SameSite=Lax`
         ]);
         
         // Return `{ ok: true }` so next-auth client triggers redirect

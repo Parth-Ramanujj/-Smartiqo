@@ -110,9 +110,11 @@ module.exports = async function handler(req, res) {
       if (path_lower.includes("/api/preview/")) {
         // Extract exact filename from req.url to preserve case (Linux tmp is case-sensitive)
         const parsedPath = parsedUrl.pathname;
-        const fileName = parsedPath.split("/api/preview/")[1];
-        if (fileName) {
+        const rawFileName = parsedPath.split("/api/preview/")[1];
+        if (rawFileName) {
           const os = require('os');
+          // Security: Prevent Directory Traversal / LFI
+          const fileName = path.basename(rawFileName);
           const filePath = path.join(os.tmpdir(), fileName);
           if (fs.existsSync(filePath)) {
             let contentType = "application/octet-stream";

@@ -34,6 +34,27 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    // Security: Prevent CSV / Formula Injection in Google Sheets
+    const sanitizeForGoogleSheets = (obj) => {
+      if (typeof obj === 'string') {
+        if (/^[=+\-@]/.test(obj)) return "'" + obj;
+        return obj;
+      }
+      if (Array.isArray(obj)) {
+        return obj.map(sanitizeForGoogleSheets);
+      }
+      if (obj !== null && typeof obj === 'object') {
+        const newObj = {};
+        for (const [key, value] of Object.entries(obj)) {
+          newObj[key] = sanitizeForGoogleSheets(value);
+        }
+        return newObj;
+      }
+      return obj;
+    };
+    
+    const sanitizedBodyData = sanitizeForGoogleSheets(bodyData || {});
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second timeout to beat Vercel's 10s limit
 
@@ -44,7 +65,7 @@ module.exports = async function handler(req, res) {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(bodyData || {}),
+        body: JSON.stringify(sanitizedBodyData),
         redirect: 'manual',
         signal: controller.signal
       });
