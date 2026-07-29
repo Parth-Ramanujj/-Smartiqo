@@ -3,6 +3,14 @@
   "defaultPort": 8080,
   "defaultHost": "0.0.0.0",
   "sessionTokenName": "session_token",
-  "authCookieNames": ["session_token", "next-auth.session-token", "logged_in", "auth_email", "auth_role"],
-  "corsOrigins": ["*"]
+  "authCookieNames": [
+    "session_token",
+    "next-auth.session-token",
+    "logged_in",
+    "auth_email",
+    "auth_role"
+  ],
+  "corsOrigins": [
+    "*"
+  ]
 }

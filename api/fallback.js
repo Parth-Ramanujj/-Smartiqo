@@ -66,6 +66,11 @@ module.exports = async function handler(req, res) {
       return authHandler(req, res);
     }
 
+    if (path_lower.includes("/api/sync-to-sheet")) {
+      const syncHandler = require('./sync.js');
+      return syncHandler.default ? syncHandler.default(req, res) : syncHandler(req, res);
+    }
+
     if (req.method === 'GET') {
       if (api_path === "api/icons") {
         const staticPath = path.join(API_MOCK_DIR, "icons.json");
