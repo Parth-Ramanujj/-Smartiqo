@@ -4,7 +4,7 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbzSTmI2W9J58MOC_fUEQad9
 
 const sharedApi = require('./shared-api.js');
 
-function loadUsers() {
+function loadUsers(req) {
   const diskLoader = () => {
     const usersFile = path.join(process.cwd(), 'users.json');
     if (fs.existsSync(usersFile)) {
@@ -18,15 +18,30 @@ function loadUsers() {
     return [{name: "Admin User", email: "admin@smartiqo.com", password: "Admin@7772", role: "admin"}];
   };
 
+  let diskUsers = [];
   if (sharedApi.getGlobalUsersCache) {
     const cache = sharedApi.getGlobalUsersCache();
-    if (cache) return cache;
-    const users = diskLoader();
-    sharedApi.setGlobalUsersCache(users);
-    return users;
+    if (cache) diskUsers = cache;
+    else {
+      diskUsers = diskLoader();
+      sharedApi.setGlobalUsersCache(diskUsers);
+    }
+  } else {
+    diskUsers = diskLoader();
   }
-  
-  return diskLoader();
+
+  let cookieUsers = [];
+  const cookies = (req && req.headers && req.headers.cookie) || '';
+  const match = cookies.match(/mock_users=([^;]+)/);
+  if (match) {
+    try { cookieUsers = JSON.parse(decodeURIComponent(match[1])); } catch(e){}
+  }
+
+  const allUsers = [...diskUsers];
+  for (const cu of cookieUsers) {
+    if (!allUsers.find(u => u.email === cu.email)) allUsers.push(cu);
+  }
+  return allUsers;
 }
 
 module.exports = async function handler(req, res) {
@@ -117,7 +132,7 @@ module.exports = async function handler(req, res) {
     let email = body.email || "";
     let password = body.password || "";
 
-    const users = loadUsers();
+    const users = loadUsers(req);
     const foundUser = users.find(u => u.email === email && u.password === password);
     let user = foundUser;
     

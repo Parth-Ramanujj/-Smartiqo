@@ -26,9 +26,28 @@ function getCachedUsers(loadUsers) {
   return globalUsersCache;
 }
 
+function getCookieUsers(req) {
+  let cookieUsers = [];
+  const cookies = (req && req.headers && req.headers.cookie) || '';
+  const match = cookies.match(/mock_users=([^;]+)/);
+  if (match) {
+    try { cookieUsers = JSON.parse(decodeURIComponent(match[1])); } catch(e){}
+  }
+  return cookieUsers;
+}
+
 function handleUsersGet(req, res, { loadUsers }) {
   try {
-    const users = getCachedUsers(loadUsers).map(u => ({ name: u.name, email: u.email, role: u.role }));
+    const diskUsers = getCachedUsers(loadUsers);
+    const cookieUsers = getCookieUsers(req);
+    
+    // Merge, ensuring no duplicates by email
+    const allUsers = [...diskUsers];
+    for (const cu of cookieUsers) {
+      if (!allUsers.find(u => u.email === cu.email)) allUsers.push(cu);
+    }
+    
+    const users = allUsers.map(u => ({ name: u.name, email: u.email, role: u.role }));
     return sendJson(res, 200, { users });
   } catch (err) {
     return handleError(res, err);
@@ -37,18 +56,28 @@ function handleUsersGet(req, res, { loadUsers }) {
 
 function handleUsersPost(req, res, { loadUsers, saveUsers, body }) {
   try {
-    const users = getCachedUsers(loadUsers);
-    if (users.find(u => u.email === body.email)) {
+    const diskUsers = getCachedUsers(loadUsers);
+    let cookieUsers = getCookieUsers(req);
+    
+    const allUsers = [...diskUsers, ...cookieUsers];
+    if (allUsers.find(u => u.email === body.email)) {
       return sendJson(res, 400, { error: "User exists" });
     }
-    users.push({
+    
+    const newUser = {
       name: body.name,
       email: body.email,
       password: body.password,
       role: body.role || "user"
-    });
-    saveUsers(users);
-    globalUsersCache = users; // Update cache
+    };
+    cookieUsers.push(newUser);
+    
+    globalUsersCache = [...diskUsers, ...cookieUsers]; // Update cache for current container
+    saveUsers(globalUsersCache); // Try disk (fails on Vercel)
+    
+    const cookieValue = encodeURIComponent(JSON.stringify(cookieUsers));
+    res.setHeader('Set-Cookie', `mock_users=${cookieValue}; Path=/; Max-Age=31536000; SameSite=Lax`);
+    
     return sendJson(res, 200, { success: true });
   } catch (err) {
     return handleError(res, err);
@@ -57,10 +86,19 @@ function handleUsersPost(req, res, { loadUsers, saveUsers, body }) {
 
 function handleUsersDelete(req, res, { loadUsers, saveUsers, email }) {
   try {
-    let users = getCachedUsers(loadUsers);
-    users = users.filter(u => u.email !== email);
-    saveUsers(users);
-    globalUsersCache = users; // Update cache
+    let diskUsers = getCachedUsers(loadUsers);
+    let cookieUsers = getCookieUsers(req);
+    
+    // Delete from both
+    diskUsers = diskUsers.filter(u => u.email !== email);
+    cookieUsers = cookieUsers.filter(u => u.email !== email);
+    
+    globalUsersCache = [...diskUsers, ...cookieUsers];
+    saveUsers(globalUsersCache);
+    
+    const cookieValue = encodeURIComponent(JSON.stringify(cookieUsers));
+    res.setHeader('Set-Cookie', `mock_users=${cookieValue}; Path=/; Max-Age=31536000; SameSite=Lax`);
+    
     return sendJson(res, 200, { success: true });
   } catch (err) {
     return handleError(res, err);
