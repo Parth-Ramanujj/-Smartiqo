@@ -20,6 +20,37 @@ function getWebAppUrl() {
   return localStorage.getItem("googleSheetUrl") || DEFAULT_WEB_APP_URL;
 }
 
+// ─── Get logged-in user info from auth session ──────────────────────────────
+let _cachedUser = null;
+async function getLoggedInUser() {
+  if (_cachedUser) return _cachedUser;
+  try {
+    const res = await fetch("/api/auth/session");
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.user && data.user.email) {
+        _cachedUser = { email: data.user.email, name: data.user.name || "" };
+        return _cachedUser;
+      }
+    }
+  } catch (e) {
+    console.warn("[CartSync] Could not fetch user session:", e);
+  }
+  // Fallback: try reading from cookies (auth_email / auth_name are non-HttpOnly)
+  try {
+    const cookies = document.cookie.split(";").reduce((acc, c) => {
+      const [k, v] = c.trim().split("=");
+      if (k) acc[k] = decodeURIComponent(v || "");
+      return acc;
+    }, {});
+    if (cookies.auth_email) {
+      _cachedUser = { email: cookies.auth_email, name: cookies.auth_name || "" };
+      return _cachedUser;
+    }
+  } catch (e) {}
+  return { email: "", name: "" };
+}
+
 function setWebAppUrl(url) {
   localStorage.setItem("googleSheetUrl", url);}
 
@@ -355,9 +386,14 @@ async function buildFullItemPayload(item, orderId, isOrderConfirmation) {
     dateStr,
   );
 
+  // Get logged-in user info
+  const user = await getLoggedInUser();
+
   return {
     orderId: orderId,
     date: dateStr,
+    userEmail: user.email,
+    userName: user.name,
     productId: productId,
     orderName: orderName,
     customName: customName,
@@ -417,26 +453,53 @@ function debugLog(step, data) {
   }).catch(()=>{});
 }
 
+// ─── Upload base64 data to server and get back a public URL ─────────────────
+async function uploadBase64ToServer(dataUrl, type, orderId) {
+  try {
+    const res = await fetch("/api/upload-preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dataUrl, type, orderId }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.url) {
+        // Return full URL so Google Sheets can access it
+        return window.location.origin + data.url;
+      }
+    }
+  } catch (e) {
+    console.warn("[CartSync] Failed to upload " + type + ":", e);
+  }
+  return null;
+}
+
 // ─── Send a SINGLE object payload to Google Apps Script ───────────────────────
 async function sendSinglePayloadToGAS(payloadObj, rawItem) {
-  // Strip heavy base64 data before sending (prevents GAS request size limit crash)
   const cleanPayload = Object.assign({}, payloadObj);
+
+  // Upload preview image to server and replace base64 with URL
   if (cleanPayload.imagePreview && cleanPayload.imagePreview.startsWith("data:")) {
-    cleanPayload.imagePreview = "Preview Generated (Base64 stripped)";
+    const imgUrl = await uploadBase64ToServer(cleanPayload.imagePreview, "image", cleanPayload.orderId);
+    cleanPayload.imagePreview = imgUrl || "Preview upload failed";
   }
   if (cleanPayload.preview && cleanPayload.preview.startsWith("data:")) {
-    cleanPayload.preview = cleanPayload.panelName || "Preview";
+    cleanPayload.preview = cleanPayload.imagePreview; // Use the same uploaded URL
   }
+
+  // Upload PDF to server and replace base64 with URL
   if (cleanPayload.flowPdf && cleanPayload.flowPdf.startsWith("data:")) {
-    cleanPayload.flowPdf = "PDF Generated (Base64 stripped)";
+    const pdfUrl = await uploadBase64ToServer(cleanPayload.flowPdf, "pdf", cleanPayload.orderId);
+    cleanPayload.flowPdf = pdfUrl || "PDF upload failed";
   }
   if (cleanPayload.pdf && cleanPayload.pdf.startsWith("data:")) {
-    cleanPayload.pdf = "PDF Generated (Base64 stripped)";
+    cleanPayload.pdf = cleanPayload.flowPdf; // Use the same uploaded URL
   }
 
   console.log(
     "[CartSync] Sending payload via server proxy:",
     cleanPayload.orderId,
+    "User:", cleanPayload.userEmail,
   );
 
   // Save local backup

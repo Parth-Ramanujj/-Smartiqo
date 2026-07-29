@@ -155,6 +155,49 @@ app.delete("/api/logs/clear", (req, res) => {
   sharedApi.handleLogsClear(req, res, { logFilePath: SYNC_LOG_FILE });
 })
 
+// ── Upload preview images & PDFs to disk, return public URLs ──────────────
+const PREVIEW_DIR = path.join(DIR, "uploads", "previews")
+if (!fs.existsSync(PREVIEW_DIR)) fs.mkdirSync(PREVIEW_DIR, { recursive: true })
+
+app.post("/api/upload-preview", (req, res) => {
+  try {
+    const { dataUrl, type, orderId } = req.body
+    if (!dataUrl || !dataUrl.startsWith("data:")) {
+      return res.status(400).json({ error: "No valid data URL provided" })
+    }
+
+    // Parse data URL: data:<mime>;base64,<data>
+    const matches = dataUrl.match(/^data:([^;]+);base64,(.+)$/)
+    if (!matches) return res.status(400).json({ error: "Invalid data URL format" })
+
+    const mime = matches[1]
+    const base64Data = matches[2]
+    const buffer = Buffer.from(base64Data, "base64")
+
+    // Determine file extension from mime
+    let ext = ".bin"
+    if (mime.includes("png")) ext = ".png"
+    else if (mime.includes("jpeg") || mime.includes("jpg")) ext = ".jpg"
+    else if (mime.includes("pdf")) ext = ".pdf"
+    else if (mime.includes("webp")) ext = ".webp"
+    else if (mime.includes("svg")) ext = ".svg"
+
+    const prefix = type === "pdf" ? "spec" : "preview"
+    const uniqueId = (orderId || "item") + "_" + Date.now()
+    const fileName = `${prefix}_${uniqueId}${ext}`
+    const filePath = path.join(PREVIEW_DIR, fileName)
+
+    fs.writeFileSync(filePath, buffer)
+
+    const publicUrl = `/uploads/previews/${fileName}`
+    console.log(`[UPLOAD] Saved ${type} preview: ${publicUrl} (${buffer.length} bytes)`)
+    return res.json({ success: true, url: publicUrl, fileName })
+  } catch (err) {
+    console.error("[UPLOAD] Error saving preview:", err.message)
+    return res.status(500).json({ error: err.message })
+  }
+})
+
 // ── Server-side proxy to Google Apps Script (bypasses CORS) ────────────────
 const https = require("https")
 
@@ -250,7 +293,7 @@ function isAuthenticated(req) {
 }
 
 function isAssetPath(p) {
-  if (["/_next/", "/assets/", "/icon/", "/Image/", "/image/"].some(pre => p.startsWith(pre))) return true
+  if (["/_next/", "/assets/", "/icon/", "/Image/", "/image/", "/uploads/"].some(pre => p.startsWith(pre))) return true
   if (p === "/favicon.png" || p === "/india.png") return true
   if (p.toLowerCase().includes("custom-cart-sync.js")) return true
   return ASSET_EXTS.some(e => p.toLowerCase().endsWith(e))
@@ -410,6 +453,7 @@ function handleAuthPost(req, res, body) {
         `next-auth.session-token=${SESSION_TOKEN}; Path=/; HttpOnly; SameSite=Lax`,
         `logged_in=yes; Path=/; SameSite=Lax`,
         `auth_email=${user.email}; Path=/; SameSite=Lax`,
+        `auth_name=${encodeURIComponent(user.name || "User")}; Path=/; SameSite=Lax`,
         `auth_role=${user.role || "user"}; Path=/; SameSite=Lax`
       ])
       // next-auth client checks d.ok === true to trigger redirect
@@ -464,9 +508,17 @@ function handleAuthGet(req, res) {
     if (isAuthenticated(req)) {
       const authRole = req.cookies.auth_role || "user"
       const authEmail = req.cookies.auth_email || AUTH_USERNAME
+      const authName = req.cookies.auth_name ? decodeURIComponent(req.cookies.auth_name) : null
+      // Look up actual user name from users.json if not in cookie
+      let userName = authName || "User"
+      if (!authName) {
+        const users = loadUsers()
+        const found = users.find(u => u.email === authEmail)
+        if (found) userName = found.name
+      }
       return sendJson(res, 200, {
         user: {
-          id: "user1", name: "User", email: authEmail,
+          id: "user1", name: userName, email: authEmail,
           role: authRole, isPremium: true, parentUserId: null
         },
         expires: "2026-12-31T23:59:59.999Z"
