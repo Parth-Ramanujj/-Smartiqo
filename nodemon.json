@@ -1,0 +1,19 @@
+{
+  "watch": [
+    "serve.js",
+    "api/*.js",
+    "config.json",
+    ".env",
+    "users.json"
+  ],
+  "ignore": [
+    "logs/*",
+    "api-static/*",
+    "_next/*",
+    "pages/*",
+    "node_modules/*",
+    "orders.json"
+  ],
+  "ext": "js,json,env",
+  "delay": "2000"
+}

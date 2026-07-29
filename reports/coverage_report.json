@@ -1,0 +1,43 @@
+{
+  "pages_captured": 7,
+  "assets_downloaded": 118,
+  "assets_failed": 7,
+  "total_api_endpoints": 112,
+  "pages": [
+    {
+      "url": "https://vdplshop.in/Dashboards/userDashboard",
+      "title": "SwitchCraft",
+      "status": 200
+    },
+    {
+      "url": "https://vdplshop.in/orders",
+      "title": "SwitchCraft",
+      "status": 200
+    },
+    {
+      "url": "https://vdplshop.in/orders?tab=orders",
+      "title": "SwitchCraft",
+      "status": 200
+    },
+    {
+      "url": "https://vdplshop.in/orders?tab=cart",
+      "title": "SwitchCraft",
+      "status": 200
+    },
+    {
+      "url": "https://vdplshop.in/Dashboards/myProfile",
+      "title": "SwitchCraft",
+      "status": 404
+    },
+    {
+      "url": "https://vdplshop.in/Dashboards/myOrders",
+      "title": "SwitchCraft",
+      "status": 404
+    },
+    {
+      "url": "https://vdplshop.in",
+      "title": "SwitchCraft",
+      "status": 200
+    }
+  ]
+}

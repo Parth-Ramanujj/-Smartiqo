@@ -1,0 +1,40 @@
+# SmartiQo Project AI Rules
+
+You are working in a STATIC CLONE of a Next.js Single Page Application (SPA).
+Because this is a static export, YOU CANNOT AND MUST NOT EDIT HTML FILES directly (`index.html` or `pages/*.html`). If you do, React Hydration will immediately overwrite your changes when the page loads in the browser.
+
+## CRITICAL RULES FOR UI/LOGIC UPDATES:
+
+1. **NEVER EDIT HTML FILES DIRECTLY.** Do not modify `index.html` or files in the `pages/` directory to make UI or text changes.
+2. **ALL CHANGES MUST GO IN `my-custom-changes.js`**. 
+3. **USE SmartiqoInjector**. To modify the DOM, you must use the custom `SmartiqoInjector` framework which waits for React Hydration to finish before applying changes.
+
+### How to use SmartiqoInjector (in `my-custom-changes.js`):
+
+**For DOM Changes / Text Updates / Event Listeners:**
+```javascript
+SmartiqoInjector.watch('your-css-selector', (element) => {
+    // This callback runs AFTER React hydration has rendered the element
+    element.textContent = 'New Text';
+    
+    element.addEventListener('click', () => {
+        // custom logic
+    });
+});
+```
+
+**For CSS Styling Updates:**
+```javascript
+SmartiqoInjector.injectCSS(`
+    .your-custom-class {
+        background-color: #ff0000 !important;
+    }
+`);
+```
+
+**For modifying inline styles of specific Next.js components:**
+Always rely on `SmartiqoInjector.watch()` targeting specific classes, tags, or IDs. 
+
+DO NOT attempt to look for standard React `.jsx` or `.tsx` files. They do not exist in this workspace. Everything is pre-bundled in `_next/static/`.
+
+Follow these rules perfectly and your UI updates will succeed.

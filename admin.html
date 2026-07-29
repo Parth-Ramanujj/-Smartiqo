@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script id="sc-early-hydrate">
+  // SWITCHCRAFT: Early Hydration for Cart Editing
+  (function() {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const cartParamId = urlParams.get('cart');
+      if (!cartParamId) return;
+      
+      let item = null;
+      let allItems = [];
+      
+      const possibleKeys = ['persist:root'];
+      for (const k of possibleKeys) {
+        const raw = localStorage.getItem(k);
+        if (!raw) continue;
+        try {
+            const parsed = JSON.parse(raw);
+            if (parsed.cartData) {
+              const cd = typeof parsed.cartData === 'string' ? JSON.parse(parsed.cartData) : parsed.cartData;
+              if (cd.cartItems && cd.cartItems.length > 0) { allItems = cd.cartItems; break; }
+            }
+            if (parsed.cartItems && parsed.cartItems.length > 0) { allItems = parsed.cartItems; break; }
+        } catch(e){}
+      }
+      item = allItems.find(i => i.id === cartParamId || i.productSequence === cartParamId);
+    
+    // Fallbacks for Dashboard Edit
+    if (!item && cartParamId) {
+        try {
+            let localOrders = JSON.parse(localStorage.getItem('sc_local_orders') || '[]');
+            let match = localOrders.find(i => i.payload && (i.payload.orderId === cartParamId));
+            if (match && match.rawCartData) {
+                item = {
+                    cartData: match.rawCartData,
+                    dropped: match.rawDropped || []
+                };
+            }
+        } catch(e){}
+    }
+
+      if (item) {
+        const persistStr = localStorage.getItem('persist:root');
+        if (persistStr) {
+           const persist = JSON.parse(persistStr);
+           let cartDataState = persist.cartData ? JSON.parse(persist.cartData) : {};
+           cartDataState.cartData = item.cartData || item.rawCartData || item;
+           persist.cartData = JSON.stringify(cartDataState);
+           localStorage.setItem('persist:root', JSON.stringify(persist));
+           console.log('[Early Hydrate] Injected cart item', cartParamId, 'into persist:root');
+        }
+      }
+    } catch (e) {
+      console.error('[Early Hydrate Error]', e);
+    }
+  })();
+</script>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwitchCraft | Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --secondary: #ec4899;
+      --bg: #0f172a;
+      --surface: rgba(30, 41, 59, 0.7);
+      --surface-border: rgba(255, 255, 255, 0.1);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --danger: #ef4444;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(79, 70, 229, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 85% 30%, rgba(236, 72, 153, 0.15) 0%, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: var(--surface);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-right: 1px solid var(--surface-border);
+      display: flex;
+      flex-direction: column;
+      padding: 2rem 1.5rem;
+    }
+
+    .brand {
+      font-size: 1.75rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a78bfa, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 3rem;
+      letter-spacing: -0.025em;
+    }
+
+    .nav-items { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
+
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      font-size: 1.05rem;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      transform: translateX(5px);
+    }
+
+    .nav-btn.active {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+    }
+
+    .logout-btn {
+      margin-top: auto;
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger);
+    }
+    .logout-btn:hover { background: var(--danger); color: #fff; }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      padding: 3rem 4rem;
+      overflow-y: auto;
+    }
+
+    .header { margin-bottom: 3rem; }
+    .header h1 { font-size: 2.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .header p { color: var(--text-muted); font-size: 1.1rem; }
+
+    .view-section { display: none; animation: fadeIn 0.4s ease forwards; }
+    .view-section.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Glass Panels */
+    .glass-panel {
+      background: var(--surface);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--surface-border);
+      border-radius: 20px;
+      padding: 2.5rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      margin-bottom: 2rem;
+    }
+
+    h2 { font-size: 1.5rem; margin-bottom: 1.5rem; font-weight: 500; }
+
+    /* Forms & Inputs */
+    .form-group { margin-bottom: 1.5rem; }
+    .form-group label { display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; }
+    .form-control {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--surface-border);
+      color: var(--text);
+      padding: 0.875rem 1.25rem;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+    .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
+
+    .btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 0.875rem 2rem;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .btn:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3); }
+    .btn-secondary { background: rgba(255,255,255,0.1); color: var(--text); }
+    .btn-secondary:hover { background: rgba(255,255,255,0.2); box-shadow: none; }
+    .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+    .btn-danger:hover { background: var(--danger); color: #fff; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); }
+    .btn-sm { padding: 0.5rem 1rem; font-size: 0.875rem; border-radius: 8px; }
+
+    /* Tables */
+    .table-container { overflow-x: auto; margin-top: 1.5rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 1.25rem 1rem; text-align: left; border-bottom: 1px solid var(--surface-border); }
+    th { color: var(--text-muted); font-weight: 500; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    tr:last-child td { border-bottom: none; }
+    tbody tr { transition: background 0.3s ease; }
+    tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+    
+    .badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge.admin { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
+    .badge.user { background: rgba(79, 70, 229, 0.2); color: #818cf8; }
+
+    /* Flex Header for Tables */
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .section-header h2 { margin-bottom: 0; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      backdrop-filter: blur(16px);
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      z-index: 1000;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast.error { border-left: 4px solid var(--danger); }
+    
+    /* Loading Spinner */
+    .loader {
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-state { text-align: center; padding: 3rem; color: var(--text-muted); }
+
+    .order-card {
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .order-card h4 { color: var(--primary); margin-bottom: 0.5rem; }
+    .order-card p { font-size: 0.9rem; color: #cbd5e1; margin-bottom: 0.25rem; }
+    .order-card .user-email { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; }
+
+
+    /* Login Overlay */
+    #login-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--bg);
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(79, 70, 229, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 85% 30%, rgba(236, 72, 153, 0.15) 0%, transparent 50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .login-box {
+      background: var(--surface);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--surface-border);
+      padding: 3rem;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+    .login-box h2 { text-align: center; margin-bottom: 2rem; color: #fff; }
+    #dashboard-layout { display: none; height: 100vh; width: 100%; }
+
+  </style>
+</head>
+<body>\n
+<style>
+  /* Global loader styles */
+  #sc-global-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000000;
+    z-index: 999999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.5s ease-out;
+  }
+  .sc-spinner {
+    width: 60px;
+    height: 60px;
+    border: 5px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #00a8ff;
+    border-radius: 50%;
+    animation: sc-spin 1s linear infinite;
+  }
+  @keyframes sc-spin {
+    to { transform: rotate(360deg); }
+  }
+  .sc-loader-text {
+    margin-top: 20px;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    letter-spacing: 1px;
+  }
+</style>
+<div id="sc-global-loader">
+  <div class="sc-spinner"></div>
+  <div class="sc-loader-text">Loading SmartiQo...</div>
+</div>
+<script>
+  window.addEventListener('load', function() {
+    const loader = document.getElementById('sc-global-loader');
+    if (loader) {
+      loader.style.opacity = '0';
+      setTimeout(() => loader.remove(), 500);
+    }
+  });
+</script>
+
+
+  <div id="login-overlay">
+    <div class="login-box">
+      <h2>Admin Login</h2>
+      <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="login-email" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="login-password" class="form-control" required>
+        </div>
+        <button type="submit" class="btn" style="width: 100%;">Sign In</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="dashboard-layout" style="display:flex;">
+
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">SwitchCraft OS</div>
+    <nav class="nav-items">
+      <button class="nav-btn active" onclick="switchTab(event, 'dashboard')">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+        Overview
+      </button>
+      <button class="nav-btn" onclick="switchTab(event, 'users')">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        Users Management
+      </button>
+      <button class="nav-btn" onclick="switchTab(event, 'orders')">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+        All Orders
+      </button>
+      <button class="nav-btn" onclick="switchTab(event, 'settings')">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        System Config
+      </button>
+      <button class="nav-btn logout-btn" onclick="logout()">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+        Sign Out
+      </button>
+    </nav>
+  </aside>
+
+  <!-- Main Area -->
+  <main class="main-content">
+    <div class="header">
+      <h1 id="page-title">Welcome, Admin</h1>
+      <p id="page-subtitle">Manage your SwitchCraft workspace from here.</p>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="tab-dashboard" class="view-section active">
+      <div class="glass-panel" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; text-align: center;">
+        <div>
+          <h3 style="color: var(--text-muted); font-weight: 500;">Total Users</h3>
+          <p id="stat-users" style="font-size: 3rem; font-weight: 700; color: var(--primary);">0</p>
+        </div>
+        <div>
+          <h3 style="color: var(--text-muted); font-weight: 500;">Google Sheet Linked</h3>
+          <p id="stat-sheet" style="font-size: 3rem; font-weight: 700; color: var(--success);">Yes</p>
+        </div>
+        <div>
+          <h3 style="color: var(--text-muted); font-weight: 500;">System Status</h3>
+          <p style="font-size: 3rem; font-weight: 700; color: #3b82f6;">Online</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Users -->
+    <div id="tab-users" class="view-section">
+      <div class="glass-panel">
+        <div class="section-header">
+          <h2>Create New User</h2>
+        </div>
+        <form id="create-user-form" onsubmit="createUser(event)">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div class="form-group">
+              <label>Full Name</label>
+              <input type="text" id="cu-name" class="form-control" required placeholder="e.g. John Doe">
+            </div>
+            <div class="form-group">
+              <label>Email Address</label>
+              <input type="email" id="cu-email" class="form-control" required placeholder="name@company.com">
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" id="cu-password" class="form-control" required placeholder="Minimum 6 characters">
+            </div>
+            <div class="form-group">
+              <label>Role</label>
+              <select id="cu-role" class="form-control">
+                <option value="user">Standard User</option>
+                <option value="admin">Administrator</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn">Create User Account</button>
+        </form>
+      </div>
+
+      <div class="glass-panel">
+        <div class="section-header">
+          <h2>Registered Users</h2>
+          <button class="btn btn-secondary btn-sm" onclick="fetchUsers()">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            Refresh
+          </button>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body">
+              <tr><td colspan="4" class="loading-state"><div class="loader"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Orders -->
+    <div id="tab-orders" class="view-section">
+      <div class="glass-panel">
+        <div class="section-header">
+          <h2>Global Order Log</h2>
+          <button class="btn btn-primary btn-sm" onclick="fetchAllOrders()">Fetch Live Data</button>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">Orders are fetched dynamically from the configured Google Sheet for all registered users.</p>
+        
+        <div id="orders-container" class="loading-state" style="display: none;">
+          <div class="loader"></div>
+          <p style="margin-top: 1rem;">Pulling data from Google Sheets...</p>
+        </div>
+        
+        <div id="orders-list">
+          <!-- Orders injected here -->
+          <div style="text-align: center; padding: 2rem; color: var(--text-muted); border: 1px dashed var(--surface-border); border-radius: 12px;">
+            Click "Fetch Live Data" to view aggregated orders from the Google Sheet.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div id="tab-settings" class="view-section">
+      <div class="glass-panel">
+        <h2>Google Sheet Integration</h2>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">Configure the global Google Apps Script Web App URL used to sync and retrieve cart data for all users. Regular users will not see this URL.</p>
+        
+        <form id="config-form" onsubmit="saveConfig(event)">
+          <div class="form-group">
+            <label>Web App URL</label>
+            <input type="url" id="config-url" class="form-control" required placeholder="https://script.google.com/macros/s/.../exec">
+          </div>
+          <button type="submit" class="btn">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+            Save Configuration
+          </button>
+        </form>
+      </div>
+    </div>
+  </main>
+  </div>
+
+  <div id="toast" class="toast">
+    <span id="toast-icon">✅</span>
+    <span id="toast-msg">Success</span>
+  </div>
+
+  <script>
+    let globalUsers = [];
+    let globalSheetUrl = "";
+
+    function showToast(msg, type='success') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      document.getElementById('toast-icon').textContent = type === 'success' ? '✅' : '❌';
+      toast.className = `toast show ${type}`;
+      setTimeout(() => { toast.className = 'toast'; }, 3000);
+    }
+
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+      if (event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+      }
+
+      const titles = {
+        'dashboard': ['Overview', 'Manage your SwitchCraft workspace from here.'],
+        'users': ['Users Management', 'Create and oversee user accounts.'],
+        'orders': ['All Orders', 'View cart data synced to Google Sheets.'],
+        'settings': ['System Config', 'Global application settings.']
+      };
+      
+      document.getElementById('page-title').textContent = titles[tabId][0];
+      document.getElementById('page-subtitle').textContent = titles[tabId][1];
+
+      if(tabId === 'users' && globalUsers.length === 0) fetchUsers();
+      if(tabId === 'settings' && !globalSheetUrl) fetchConfig();
+    }
+
+    async function fetchConfig() {
+      try {
+        const res = await fetch('/api/config/google-sheet-url');
+        const data = await res.json();
+        globalSheetUrl = data.url || "";
+        document.getElementById('config-url').value = globalSheetUrl;
+        document.getElementById('stat-sheet').textContent = globalSheetUrl ? 'Yes' : 'No';
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function saveConfig(e) {
+      e.preventDefault();
+      const url = document.getElementById('config-url').value;
+      const btn = e.target.querySelector('button');
+      const origText = btn.innerHTML;
+      btn.innerHTML = '<div class="loader"></div>';
+      try {
+        const res = await fetch('/api/config/google-sheet-url', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({url})
+        });
+        if (res.ok) {
+          showToast('Configuration saved globally!');
+          globalSheetUrl = url;
+          document.getElementById('stat-sheet').textContent = 'Yes';
+        } else {
+          showToast('Failed to save configuration', 'error');
+        }
+      } catch (e) {
+        showToast('Error saving configuration', 'error');
+      } finally {
+        btn.innerHTML = origText;
+      }
+    }
+
+    async function fetchUsers() {
+      const tbody = document.getElementById('users-table-body');
+      tbody.innerHTML = '<tr><td colspan="4" class="loading-state"><div class="loader"></div></td></tr>';
+      try {
+        const res = await fetch('/api/admin/users');
+        const data = await res.json();
+        globalUsers = data.users || [];
+        document.getElementById('stat-users').textContent = globalUsers.length;
+        
+        if (globalUsers.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">No users found</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = globalUsers.map(u => `
+          <tr>
+            <td style="font-weight:500;">${u.name || 'User'}</td>
+            <td style="color:var(--text-muted);">${u.email}</td>
+            <td><span class="badge ${u.role}">${u.role}</span></td>
+            <td>
+              <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.email}')">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--danger)">Failed to load users</td></tr>';
+      }
+    }
+
+    async function createUser(e) {
+      e.preventDefault();
+      const btn = e.target.querySelector('button');
+      const orig = btn.innerText;
+      btn.innerText = 'Creating...';
+      
+      const payload = {
+        name: document.getElementById('cu-name').value,
+        email: document.getElementById('cu-email').value,
+        password: document.getElementById('cu-password').value,
+        role: document.getElementById('cu-role').value,
+      };
+
+      try {
+        const res = await fetch('/api/admin/users', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        if(res.ok) {
+          showToast('User created successfully');
+          e.target.reset();
+          fetchUsers();
+        } else {
+          showToast('Failed to create user', 'error');
+        }
+      } catch(err) {
+        showToast('Error creating user', 'error');
+      } finally {
+        btn.innerText = orig;
+      }
+    }
+
+    async function deleteUser(email) {
+      if(!confirm(`Are you sure you want to delete ${email}?`)) return;
+      try {
+        const res = await fetch(`/api/admin/users?email=${encodeURIComponent(email)}`, {
+          method: 'DELETE'
+        });
+        if(res.ok) {
+          showToast('User deleted');
+          fetchUsers();
+        } else {
+          showToast('Failed to delete user', 'error');
+        }
+      } catch (e) {
+        showToast('Error deleting user', 'error');
+      }
+    }
+
+    async function fetchAllOrders() {
+      if(!globalSheetUrl) {
+        showToast('Please configure Google Sheet URL in System Config first', 'error');
+        return;
+      }
+      
+      document.getElementById('orders-list').innerHTML = '';
+      document.getElementById('orders-container').style.display = 'block';
+
+      // We will iterate through globalUsers, fetch from sheet, and aggregate
+      if (globalUsers.length === 0) await fetchUsers();
+      
+      let allOrdersHTML = '';
+      let totalOrders = 0;
+
+      for (let user of globalUsers) {
+         try {
+           const url = `${globalSheetUrl}?action=getUserOrders&email=${encodeURIComponent(user.email)}`;
+           const res = await fetch(url);
+           const data = await res.json();
+           
+           if(data.success && data.orders && data.orders.length > 0) {
+             data.orders.forEach(o => {
+               totalOrders++;
+               const details = JSON.parse(o.orderDetails || '{}');
+               allOrdersHTML += `
+                 <div class="order-card">
+                    <div style="display:flex; justify-content:space-between;">
+                      <h4>${details.projectName || 'Untitled Order'}</h4>
+                      <span class="badge ${user.role}">${user.email}</span>
+                    </div>
+                    <div class="user-email">Order ID: ${o.orderId} | Date: ${new Date(o.timestamp).toLocaleString()}</div>
+                    <p><strong>Panel:</strong> ${details.panelType} | <strong>Material:</strong> ${details.plateMaterial} | <strong>Size:</strong> ${details.size}</p>
+                    <p><strong>Tech:</strong> ${details.technology} | <strong>Colors:</strong> ${details.glassColor} / ${details.rimColor} / ${details.symbolColor}</p>
+                 </div>
+               `;
+             });
+           }
+         } catch(e) {
+           console.error(`Failed to fetch orders for ${user.email}`, e);
+         }
+      }
+
+      document.getElementById('orders-container').style.display = 'none';
+      const list = document.getElementById('orders-list');
+      if (totalOrders > 0) {
+        list.innerHTML = `<h3 style="margin-bottom:1rem;color:var(--success)">Loaded ${totalOrders} synced orders across all users</h3>` + allOrdersHTML;
+      } else {
+        list.innerHTML = `<div style="text-align: center; padding: 2rem; color: var(--text-muted); border: 1px dashed var(--surface-border); border-radius: 12px;">No orders found in the Google Sheet for any registered user.</div>`;
+      }
+    }
+
+    function logout() {
+      fetch('/api/auth/signout')
+        .then(() => window.location.href = "/Login")
+        .catch(() => window.location.href = "/Login");
+    }
+
+
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/auth/session');
+        const data = await res.json();
+        if (data.user && data.user.role === 'admin') {
+          document.getElementById('login-overlay').style.display = 'none';
+          document.getElementById('dashboard-layout').style.display = 'flex';
+          fetchConfig();
+          fetchUsers();
+        } else {
+          document.getElementById('login-overlay').style.display = 'flex';
+          document.getElementById('dashboard-layout').style.display = 'none';
+        }
+      } catch (e) {
+        document.getElementById('login-overlay').style.display = 'flex';
+      }
+    }
+
+    async function handleAdminLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      const btn = e.target.querySelector('button');
+      btn.innerText = 'Signing in...';
+      try {
+        const res = await fetch('/api/auth/signin', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({email, password})
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok) {
+            checkAuth();
+          } else {
+            showToast('Invalid credentials or not an admin', 'error');
+          }
+        } else {
+          showToast('Invalid credentials or not an admin', 'error');
+        }
+      } catch(e) {
+        showToast('Login error', 'error');
+      } finally {
+        btn.innerText = 'Sign In';
+      }
+    }
+
+    // Replace window.onload
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAuth();
+    });
+
+
+  </script>
+</body>
+</html>
+

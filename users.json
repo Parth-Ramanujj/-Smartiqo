@@ -1,0 +1,31 @@
+{
+  "users": [
+    {
+      "email": "info@smartiqo.com",
+      "password": "Smartiqo@7772",
+      "name": "Admin User",
+      "role": "admin",
+      "id": "user_001"
+    },
+    {
+      "email": "admin@smartiqo.com",
+      "password": "Admin@7772",
+      "role": "admin",
+      "name": "Admin User",
+      "id": "user_003"
+    },
+    {
+      "email": "user2@smartiqo.com",
+      "password": "User2@pass",
+      "name": "User Two",
+      "role": "user",
+      "id": "user_002"
+    },
+    {
+      "name": "ashish",
+      "email": "ashish@gmail.com",
+      "password": "ashish",
+      "role": "user"
+    }
+  ]
+}

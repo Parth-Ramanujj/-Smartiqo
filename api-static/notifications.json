@@ -1,0 +1,4 @@
+[
+  {"id": "notif1", "title": "Welcome", "message": "Welcome to SwitchCraft dashboard", "read": false, "createdAt": "2026-07-08T00:00:00.000Z"},
+  {"id": "notif2", "title": "Subscription Active", "message": "Your premium subscription is active", "read": false, "createdAt": "2026-07-08T00:00:00.000Z"}
+]

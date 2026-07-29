@@ -1,0 +1,22 @@
+{
+  "data": [
+    {
+      "id": "ORD-77721",
+      "date": "2026-07-10",
+      "status": "completed",
+      "total": 4999,
+      "items": 3,
+      "orderName": "Living Room panel"
+    },
+    {
+      "id": "ORD-77722",
+      "date": "2026-07-12",
+      "status": "processing",
+      "total": 12999,
+      "items": 5,
+      "orderName": "Bedroom panel"
+    }
+  ],
+  "page": 1,
+  "totalPages": 1
+}

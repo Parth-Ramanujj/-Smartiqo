@@ -1,0 +1,10 @@
+{
+  "baseRate": 0.05,
+  "discountThreshold": 10000,
+  "discountRate": 0.08,
+  "bulkThreshold": 50000,
+  "bulkDiscountRate": 0.12,
+  "taxRate": 0.18,
+  "shippingBase": 100,
+  "shippingFreeAbove": 5000
+}

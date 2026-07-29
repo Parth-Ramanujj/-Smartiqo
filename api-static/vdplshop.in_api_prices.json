@@ -1,0 +1,14 @@
+[
+  {"id": "7", "base_price": 100},
+  {"id": "8", "base_price": 200},
+  {"id": "9", "base_price": 300},
+  {"id": "10", "base_price": 400},
+  {"id": "11", "base_price": 600},
+  {"id": "30", "base_price": 150},
+  {"id": "31", "base_price": 350},
+  {"id": "32", "base_price": 400},
+  {"id": "33", "base_price": 450},
+  {"id": "34", "base_price": 500},
+  {"id": "35", "base_price": 650},
+  {"id": "36", "base_price": 700}
+]

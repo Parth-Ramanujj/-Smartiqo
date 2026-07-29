@@ -1,0 +1,674 @@
+[
+  {
+    "url": "https://vdplshop.in/api/pricing-constants",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/prices",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/icons",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/premium/panel-names",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/_log",
+    "method": "GET",
+    "status": 200,
+    "content_type": ""
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/_log",
+    "method": "GET",
+    "status": 200,
+    "content_type": ""
+  },
+  {
+    "url": "https://vdplshop.in/api/pricing-constants",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/_log",
+    "method": "GET",
+    "status": 200,
+    "content_type": ""
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/_log",
+    "method": "GET",
+    "status": 200,
+    "content_type": ""
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/precheck",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/precheck",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/providers",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/csrf",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/callback/credentials",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/pricing-constants",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/prices",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/icons",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/order-names",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/premium/panel-names",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/order-names",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/e9295133-52f7-4edd-8c2c-1db83e05e429",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/offers",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/activity/update",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/subscription/status",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/e9295133-52f7-4edd-8c2c-1db83e05e429",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/premium/panel-names",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/__global__",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/notifications",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/pricing-constants",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/prices",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/premium/panel-names",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/icons",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/order-names",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/order-names",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/premium/panel-names",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/e9295133-52f7-4edd-8c2c-1db83e05e429",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/subscription/status",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/activity/update",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/e9295133-52f7-4edd-8c2c-1db83e05e429",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/offers",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/__global__",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/notifications",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/pricing-constants",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/e9295133-52f7-4edd-8c2c-1db83e05e429",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/premium/panel-names",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/e9295133-52f7-4edd-8c2c-1db83e05e429",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/subscription/status",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/my-orders?page=1&limit=50",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/__global__",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/notifications",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/e9295133-52f7-4edd-8c2c-1db83e05e429",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/premium/panel-names",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/__global__",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/subscription/status",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/e9295133-52f7-4edd-8c2c-1db83e05e429",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/my-orders?page=1&limit=50",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/pricing-constants",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/notifications",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/pricing-constants",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/premium/panel-names",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/subscription/status",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/e9295133-52f7-4edd-8c2c-1db83e05e429",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/e9295133-52f7-4edd-8c2c-1db83e05e429",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/my-orders?page=1&limit=50",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/__global__",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/notifications",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/pricing-constants",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/e9295133-52f7-4edd-8c2c-1db83e05e429",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/__global__",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/subscription/status",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/notifications",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/pricing-constants",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/__global__",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/subscription/status",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/e9295133-52f7-4edd-8c2c-1db83e05e429",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/notifications",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/pricing-constants",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/prices",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/icons",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/order-names",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/premium/panel-names",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/order-names",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/auth/session",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/e9295133-52f7-4edd-8c2c-1db83e05e429",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/premium/panel-names",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/e9295133-52f7-4edd-8c2c-1db83e05e429",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/offers",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/activity/update",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/subscription/status",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/userSettings/__global__",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  },
+  {
+    "url": "https://vdplshop.in/api/notifications",
+    "method": "GET",
+    "status": 200,
+    "content_type": "application/json"
+  }
+]

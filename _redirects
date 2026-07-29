@@ -1,0 +1,13 @@
+# Netlify redirects/rewrites for SPA pages
+/                                              /index.html                                                      200
+/Login                                         /pages/vdplshop.in_Login.html                                   200
+/orders                                        /pages/vdplshop.in_orders.html                                  200
+/orders/tab/cart                               /pages/vdplshop.in_orders_tab_cart.html                         200
+/orders/tab/orders                             /pages/vdplshop.in_orders_tab_orders.html                       200
+/Dashboards/userDashboard                      /pages/vdplshop.in_Dashboards_userDashboard.html                200
+/Dashboards/myOrders                           /pages/vdplshop.in_Dashboards_myOrders.html                     200
+/Dashboards/myProfile                          /pages/vdplshop.in_Dashboards_myProfile.html                    200
+/Dashboards/adminDashboard                     /pages/vdplshop.in_Dashboards_adminDashboard.html               200
+/_next/image                                   /index.html                                                     200
+/api/*                                         /api-static/:splat                                              200
+/*                                             /index.html                                                     200

@@ -1,0 +1,502 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   SmartiQo UI/UX Enhancement Sheet  (loaded via custom-cart-sync.js after MUI)
+   All selectors use :root + high-specificity to beat MUI JSS
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 0. Google Fonts ───────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ── 0. Root Tokens ────────────────────────────────────────────────────────── */
+:root {
+  --sc-primary       : #1976d2;
+  --sc-primary-dark  : #115293;
+  --sc-success       : #10b981;
+  --sc-radius        : 10px;
+  --sc-shadow        : 0 2px 12px rgba(0,0,0,.10);
+  --sc-shadow-hover  : 0 6px 24px rgba(25,118,210,.18);
+  --sc-t             : .22s cubic-bezier(.4,0,.2,1);
+  --sc-font          : 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ── 1. FONT ───────────────────────────────────────────────────────────────── */
+body,
+.MuiTypography-root,
+.MuiButton-root,
+input, select, textarea {
+  font-family: var(--sc-font) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   2.  AUTO-SELECT TOGGLE  (MUI Switch)
+   ══════════════════════════════════════════════════════════════════════ */
+.MuiSwitch-root {
+  cursor: pointer !important;
+}
+.MuiSwitch-switchBase {
+  transition: transform 220ms cubic-bezier(.4,0,.2,1) !important;
+}
+.MuiSwitch-track {
+  transition: background-color 220ms cubic-bezier(.4,0,.2,1),
+              opacity           220ms cubic-bezier(.4,0,.2,1) !important;
+  border-radius: 99px !important;
+  opacity: 1 !important;
+}
+/* GREEN when checked */
+.MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track {
+  background-color: #10b981 !important;
+  opacity: 1 !important;
+}
+.MuiSwitch-thumb {
+  box-shadow: 0 1px 4px rgba(0,0,0,.25) !important;
+  transition: transform 220ms cubic-bezier(.4,0,.2,1) !important;
+}
+.MuiSwitch-root:hover {
+  opacity: .88 !important;
+}
+.MuiSwitch-root:focus-within {
+  outline: 2px solid var(--sc-primary) !important;
+  outline-offset: 2px !important;
+  border-radius: 14px !important;
+}
+.MuiFormControlLabel-root {
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   3.  BUTTONS
+   ══════════════════════════════════════════════════════════════════════ */
+.MuiButton-root {
+  font-family: var(--sc-font) !important;
+  font-weight: 600 !important;
+  letter-spacing: .01em !important;
+  border-radius: 8px !important;
+  will-change: transform, box-shadow !important;
+  transition: transform var(--sc-t),
+              box-shadow var(--sc-t),
+              background-color var(--sc-t) !important;
+  overflow: hidden !important;
+}
+.MuiButton-root:hover:not(:disabled) {
+  transform: translateY(-1px) !important;
+  box-shadow: var(--sc-shadow-hover) !important;
+}
+.MuiButton-root:active:not(:disabled) {
+  transform: translateY(0) scale(.98) !important;
+  box-shadow: none !important;
+}
+.MuiButton-root:focus-visible {
+  outline: 2px solid var(--sc-primary) !important;
+  outline-offset: 3px !important;
+}
+
+/* Primary gradient */
+.MuiButton-containedPrimary {
+  background: linear-gradient(135deg, #1976d2 0%, #115293 100%) !important;
+}
+.MuiButton-containedPrimary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1e88e5 0%, #1976d2 100%) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   4.  CARDS & PAPER
+   ══════════════════════════════════════════════════════════════════════ */
+.MuiCard-root {
+  border-radius: var(--sc-radius) !important;
+  transition: box-shadow var(--sc-t), transform var(--sc-t) !important;
+}
+.MuiCard-root:hover {
+  box-shadow: var(--sc-shadow-hover) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   5.  INPUTS
+   ══════════════════════════════════════════════════════════════════════ */
+.MuiOutlinedInput-root {
+  border-radius: 8px !important;
+  transition: box-shadow var(--sc-t) !important;
+}
+.MuiOutlinedInput-root.Mui-focused {
+  box-shadow: 0 0 0 3px rgba(25,118,210,.18) !important;
+}
+.MuiOutlinedInput-notchedOutline {
+  transition: border-color var(--sc-t) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   6.  STEPPER STEPS  (clickable)
+   ══════════════════════════════════════════════════════════════════════ */
+.MuiStep-root,
+.MuiStepLabel-root,
+.MuiStepLabel-iconContainer,
+.MuiStepLabel-labelContainer {
+  cursor: pointer !important;
+}
+.MuiStep-root:hover .MuiStepLabel-label {
+  color: var(--sc-primary) !important;
+  font-weight: 600 !important;
+}
+.MuiStepIcon-root {
+  transition: transform var(--sc-t) !important;
+}
+.MuiStep-root:hover .MuiStepIcon-root {
+  transform: scale(1.1) !important;
+}
+.MuiStepIcon-root.Mui-active {
+  filter: drop-shadow(0 2px 6px rgba(25,118,210,.35)) !important;
+}
+.MuiStepConnector-line {
+  transition: border-color .4s !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   7.  TABLE ROWS
+   ══════════════════════════════════════════════════════════════════════ */
+.MuiTableRow-root {
+  transition: background var(--sc-t) !important;
+}
+.MuiTableRow-root:not(.MuiTableRow-head):hover td,
+.MuiTableRow-root:not(.MuiTableRow-head):hover th {
+  background: rgba(25,118,210,.04) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   8.  ICON BUTTONS
+   ══════════════════════════════════════════════════════════════════════ */
+.MuiIconButton-root {
+  transition: background var(--sc-t), transform var(--sc-t) !important;
+  will-change: transform !important;
+}
+.MuiIconButton-root:hover {
+  transform: scale(1.12) !important;
+  background: rgba(25,118,210,.10) !important;
+}
+.MuiIconButton-root:active {
+  transform: scale(.92) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   9.  SIDEBAR / NAV LIST ITEMS
+   ══════════════════════════════════════════════════════════════════════ */
+.MuiListItemButton-root {
+  border-radius: 8px !important;
+  margin: 2px 8px !important;
+  transition: background var(--sc-t), transform var(--sc-t) !important;
+}
+.MuiListItemButton-root:hover {
+  background: rgba(25,118,210,.08) !important;
+  transform: translateX(3px) !important;
+}
+.MuiListItemButton-root.Mui-selected {
+  background: rgba(25,118,210,.14) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   10.  MENU ITEMS
+   ══════════════════════════════════════════════════════════════════════ */
+.MuiMenuItem-root {
+  border-radius: 6px !important;
+  margin: 2px 4px !important;
+  transition: background var(--sc-t), padding-left var(--sc-t) !important;
+}
+.MuiMenuItem-root:hover {
+  background: rgba(25,118,210,.08) !important;
+  padding-left: 20px !important;
+}
+.MuiMenuItem-root.Mui-selected {
+  background: rgba(25,118,210,.14) !important;
+  font-weight: 600 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   11.  CHIPS / BADGES
+   ══════════════════════════════════════════════════════════════════════ */
+.MuiChip-root {
+  font-family: var(--sc-font) !important;
+  transition: transform var(--sc-t), box-shadow var(--sc-t) !important;
+}
+.MuiChip-root:hover {
+  transform: scale(1.04) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12) !important;
+}
+.MuiBadge-badge {
+  font-weight: 700 !important;
+  min-width: 20px !important;
+  height: 20px !important;
+  font-size: 11px !important;
+  transition: transform var(--sc-t) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   12.  DIALOG / MODAL
+   ══════════════════════════════════════════════════════════════════════ */
+.MuiDialog-paper {
+  border-radius: 14px !important;
+  animation: sc-dialogIn 240ms cubic-bezier(.34,1.56,.64,1) both !important;
+}
+@keyframes sc-dialogIn {
+  from { opacity:0; transform:scale(.94) translateY(8px); }
+  to   { opacity:1; transform:scale(1)   translateY(0);   }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   13.  ACCORDION
+   ══════════════════════════════════════════════════════════════════════ */
+.MuiAccordion-root {
+  border-radius: 8px !important;
+  transition: box-shadow var(--sc-t) !important;
+}
+.MuiAccordion-root.Mui-expanded {
+  box-shadow: 0 4px 20px rgba(0,0,0,.10) !important;
+}
+.MuiAccordionSummary-root {
+  transition: background var(--sc-t) !important;
+}
+.MuiAccordionSummary-root:hover {
+  background: rgba(25,118,210,.04) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   14.  TOOLTIP
+   ══════════════════════════════════════════════════════════════════════ */
+.MuiTooltip-tooltip {
+  font-family: var(--sc-font) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  padding: 5px 10px !important;
+  background: rgba(20,20,30,.88) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   15.  CART ICON
+   ══════════════════════════════════════════════════════════════════════ */
+#sc-cart-btn {
+  cursor: pointer !important;
+  border-radius: 50% !important;
+  padding: 6px !important;
+  transition: transform var(--sc-t), box-shadow var(--sc-t), background var(--sc-t) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+#sc-cart-btn:hover {
+  transform: scale(1.15) !important;
+  background: rgba(25,118,210,.10) !important;
+  box-shadow: 0 2px 12px rgba(25,118,210,.18) !important;
+}
+#sc-cart-btn:active {
+  transform: scale(.95) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   16.  GLOBAL LOADING OVERLAY
+   ══════════════════════════════════════════════════════════════════════ */
+#sc-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms cubic-bezier(.4,0,.2,1);
+}
+#sc-loading-overlay.sc-visible {
+  opacity: 1;
+  pointer-events: all;
+}
+.sc-spinner {
+  width: 44px;
+  height: 44px;
+  border: 3.5px solid rgba(25,118,210,.18);
+  border-top-color: #1976d2;
+  border-radius: 50%;
+  animation: sc-spin .72s linear infinite;
+  box-shadow: 0 4px 16px rgba(25,118,210,.18);
+}
+@keyframes sc-spin { to { transform: rotate(360deg); } }
+
+/* ══════════════════════════════════════════════════════════════════════
+   17.  PAGE FADE-IN
+   ══════════════════════════════════════════════════════════════════════ */
+.sc-page-fade {
+  animation: sc-fadeIn 300ms cubic-bezier(.4,0,.2,1) both;
+}
+@keyframes sc-fadeIn {
+  from { opacity:0; transform:translateY(6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   18.  SCROLLBAR
+   ══════════════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar              { width:6px; height:6px; }
+::-webkit-scrollbar-track        { background:transparent; }
+::-webkit-scrollbar-thumb        { background:rgba(25,118,210,.28); border-radius:99px; }
+::-webkit-scrollbar-thumb:hover  { background:rgba(25,118,210,.55); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   19.  SELECT / AUTOCOMPLETE
+   ══════════════════════════════════════════════════════════════════════ */
+.MuiAutocomplete-popper .MuiPaper-root {
+  border-radius: var(--sc-radius) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,.14) !important;
+  animation: sc-dialogIn 180ms ease both !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   20.  RESPONSIVE
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .MuiButton-root { min-height: 42px !important; font-size: 14px !important; }
+  .sc-spinner { width: 36px !important; height: 36px !important; }
+}
+@media (hover: none) {
+  /* Remove hover-lift on touch so elements don't stay lifted */
+  .MuiButton-root:hover,
+  .MuiCard-root:hover,
+  .MuiIconButton-root:hover { transform: none !important; }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   STEPPER PROGRESS BAR & STEP LABELS — ENHANCED UI/UX POLISH
+   Fixes: Clipped top labels, alignment, line positioning, icon checkmarks
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Stepper main container - add generous top padding so top labels are never clipped */
+.MuiStepper-root,
+[class*="MuiStepper-root"],
+.MuiStepper-horizontal {
+  padding-top: 38px !important;
+  padding-bottom: 20px !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+  overflow: visible !important;
+  position: relative !important;
+  align-items: center !important;
+}
+
+/* Ensure parent containers of Stepper do not clip top labels */
+.MuiStepper-root *,
+[class*="MuiStepper"] * {
+  overflow: visible !important;
+}
+
+/* Individual step container */
+.MuiStep-root,
+[class*="MuiStep-root"] {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  cursor: pointer !important;
+  position: relative !important;
+}
+
+/* Step Label root */
+.MuiStepLabel-root,
+[class*="MuiStepLabel-root"] {
+  cursor: pointer !important;
+  position: relative !important;
+}
+
+/* Icon container */
+.MuiStepLabel-iconContainer,
+[class*="MuiStepLabel-iconContainer"] {
+  z-index: 2 !important;
+  padding-right: 0 !important;
+  cursor: pointer !important;
+}
+
+/* Step SVG Icons (Numbers & Checkmarks) */
+.MuiStepIcon-root,
+svg[class*="MuiStepIcon-root"] {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 50% !important;
+  transition: transform 0.22s cubic-bezier(0.4,0,0.2,1),
+              filter 0.22s cubic-bezier(0.4,0,0.2,1),
+              box-shadow 0.22s cubic-bezier(0.4,0,0.2,1) !important;
+}
+
+/* Active Step Icon */
+.MuiStepIcon-root.Mui-active,
+svg[class*="MuiStepIcon-root"][class*="active"] {
+  color: #1976d2 !important;
+  transform: scale(1.15) !important;
+  filter: drop-shadow(0 4px 10px rgba(25,118,210,0.40)) !important;
+}
+
+/* Completed Step Icon (Checkmark) */
+.MuiStepIcon-root.Mui-completed,
+svg[class*="MuiStepIcon-root"][class*="completed"] {
+  color: #1976d2 !important;
+  filter: drop-shadow(0 2px 6px rgba(25,118,210,0.25)) !important;
+}
+
+/* Hover over step icon */
+.MuiStep-root:hover .MuiStepIcon-root {
+  transform: scale(1.18) !important;
+}
+
+/* Connector Line connecting steps */
+.MuiStepConnector-root,
+[class*="MuiStepConnector-root"] {
+  top: 15px !important;
+  left: calc(-50% + 15px) !important;
+  right: calc(50% + 15px) !important;
+  position: absolute !important;
+}
+
+.MuiStepConnector-line,
+[class*="MuiStepConnector-line"] {
+  border-top-width: 3px !important;
+  border-radius: 99px !important;
+  border-color: #e0e0e0 !important;
+  transition: border-color 0.35s ease !important;
+}
+
+.MuiStepConnector-root.Mui-active .MuiStepConnector-line,
+.MuiStepConnector-root.Mui-completed .MuiStepConnector-line {
+  border-color: #1976d2 !important;
+}
+
+/* Step Label Text (Below & Above) */
+.MuiStepLabel-label,
+[class*="MuiStepLabel-label"] {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #4b5563 !important;
+  margin-top: 8px !important;
+  transition: color 0.2s ease, font-weight 0.2s ease !important;
+  text-align: center !important;
+  line-height: 1.3 !important;
+}
+
+.MuiStepLabel-label.Mui-active,
+[class*="MuiStepLabel-label"][class*="active"] {
+  color: #1976d2 !important;
+  font-weight: 700 !important;
+}
+
+.MuiStepLabel-label.Mui-completed,
+[class*="MuiStepLabel-label"][class*="completed"] {
+  color: #1e293b !important;
+  font-weight: 600 !important;
+}
+
+.MuiStep-root:hover .MuiStepLabel-label {
+  color: #1976d2 !important;
+}
+
+/* Fix any top label sub-text positioning so it stays nicely above the circle without getting cut off */
+[class*="MuiStepLabel"] > div,
+[class*="MuiStepLabel"] span {
+  overflow: visible !important;
+}

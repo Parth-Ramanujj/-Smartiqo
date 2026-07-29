@@ -1,0 +1,12 @@
+{
+  "theme": "light",
+  "language": "en",
+  "notifications": true,
+  "currency": "INR",
+  "timezone": "Asia/Kolkata",
+  "itemsPerPage": 25,
+  "hidePrices": true,
+  "hideBasePrice": true,
+  "hideLandingPrice": true,
+  "hidePurchaseCost": true
+}

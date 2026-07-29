@@ -1,0 +1,15 @@
+{
+  "theme": "light",
+  "language": "en",
+  "notifications": true,
+  "currency": "INR",
+  "timezone": "Asia/Kolkata",
+  "itemsPerPage": 25,
+  "companyName": "SmartIQO Technologies",
+  "brandingTitle": "SmartiQo",
+  "logoUrl": "/Image/logoVerni.png",
+  "hidePrices": true,
+  "hideBasePrice": true,
+  "hideLandingPrice": true,
+  "hidePurchaseCost": true
+}

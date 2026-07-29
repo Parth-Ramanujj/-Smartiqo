@@ -1,0 +1,25 @@
+[
+  {
+    "category": "Switches",
+    "items": [
+      {"id": "sw1", "name": "2 Switch", "price": 2200},
+      {"id": "sw2", "name": "4 Switch", "price": 3200},
+      {"id": "sw3", "name": "6 Switch", "price": 4200}
+    ]
+  },
+  {
+    "category": "Sockets",
+    "items": [
+      {"id": "so1", "name": "Universal Socket", "price": 350},
+      {"id": "so2", "name": "USB Socket", "price": 650}
+    ]
+  },
+  {
+    "category": "Modules",
+    "items": [
+      {"id": "mod1", "name": "Dimmer Module", "price": 1200},
+      {"id": "mod2", "name": "Blind Module", "price": 1500},
+      {"id": "mod3", "name": "Thermostat Module", "price": 1800}
+    ]
+  }
+]

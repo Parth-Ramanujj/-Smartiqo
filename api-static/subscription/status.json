@@ -1,0 +1,8 @@
+{
+  "isPremium": false,
+  "isExpired": false,
+  "expiryDate": null,
+  "daysRemaining": null,
+  "showRenewalReminder": false,
+  "subscription": null
+}

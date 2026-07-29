@@ -1,0 +1,16 @@
+{
+  "name": "switchcraft-static-clone",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node serve.js",
+    "dev": "nodemon serve.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "express": "^5.2.1",
+    "multer": "^2.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}

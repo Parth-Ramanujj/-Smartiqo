@@ -1,0 +1,102 @@
+{
+  "rewrites": [
+    {
+      "source": "/cdr-assets/:path*",
+      "destination": "https://vdplshop.in/cdr-assets/:path*"
+    },
+    {
+      "source": "/_next/image",
+      "has": [
+        {
+          "type": "query",
+          "key": "url",
+          "value": "(?<image_url>.*)"
+        }
+      ],
+      "destination": "/:image_url"
+    },
+    {
+      "source": "/api/auth/:path*",
+      "destination": "/api/auth.js"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/api/fallback.js"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/admin/:path*",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/Login",
+      "destination": "/pages/vdplshop.in_Login.html"
+    },
+    {
+      "source": "/Dashboards/userDashboard",
+      "destination": "/pages/vdplshop.in_Dashboards_userDashboard.html"
+    },
+    {
+      "source": "/Dashboards/adminDashboard",
+      "destination": "/pages/vdplshop.in_Dashboards_adminDashboard.html"
+    },
+    {
+      "source": "/Dashboards/myOrders",
+      "destination": "/pages/vdplshop.in_Dashboards_myOrders.html"
+    },
+    {
+      "source": "/Dashboards/myProfile",
+      "destination": "/pages/vdplshop.in_Dashboards_myProfile.html"
+    },
+    {
+      "source": "/orders",
+      "has": [
+        {
+          "type": "query",
+          "key": "tab",
+          "value": "orders"
+        }
+      ],
+      "destination": "/pages/vdplshop.in_orders_tab_orders.html"
+    },
+    {
+      "source": "/orders",
+      "has": [
+        {
+          "type": "query",
+          "key": "tab",
+          "value": "cart"
+        }
+      ],
+      "destination": "/pages/vdplshop.in_orders_tab_cart.html"
+    },
+    {
+      "source": "/orders/tab/orders",
+      "destination": "/pages/vdplshop.in_orders_tab_orders.html"
+    },
+    {
+      "source": "/orders/tab/cart",
+      "destination": "/pages/vdplshop.in_orders_tab_cart.html"
+    },
+    {
+      "source": "/orders",
+      "destination": "/pages/vdplshop.in_orders.html"
+    },
+    {
+      "source": "/",
+      "destination": "/pages/vdplshop.in.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "functions": {
+    "api/**/*.js": {
+      "includeFiles": "{api-static/**,pages/**,icon/**,users.json}"
+    }
+  }
+}

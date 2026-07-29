@@ -1,0 +1,6 @@
+[
+  {"id": 1, "customer": "Demo User", "date": "2026-07-01", "status": "completed", "total": 4999, "items": 3},
+  {"id": 2, "customer": "Demo User", "date": "2026-07-03", "status": "processing", "total": 12999, "items": 5},
+  {"id": 3, "customer": "Demo User", "date": "2026-07-05", "status": "pending", "total": 2499, "items": 1},
+  {"id": 4, "customer": "Demo User", "date": "2026-07-06", "status": "shipped", "total": 8999, "items": 4}
+]
