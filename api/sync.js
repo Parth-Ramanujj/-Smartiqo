@@ -1,4 +1,5 @@
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzSTmI2W9J58MOC_fUEQad9_IZ0FlHRE2dklrY-YzAvS99_sF_nEjNMDUkl0pnq7G87/exec";
+const fs = require('fs');
+const path = require('path');
 
 module.exports = async function handler(req, res) {
   // CORS Headers
@@ -14,6 +15,16 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  let GAS_URL = "https://script.google.com/macros/s/AKfycbzSTmI2W9J58MOC_fUEQad9_IZ0FlHRE2dklrY-YzAvS99_sF_nEjNMDUkl0pnq7G87/exec";
+  try {
+    const configPath = path.join(process.cwd(), 'config.json');
+    if (fs.existsSync(configPath)) {
+      const cfg = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      if (cfg.googleSheetUrl) GAS_URL = cfg.googleSheetUrl;
+    }
+  } catch(e) {
+    console.warn("Could not read config.json in sync.js", e);
+  }
 
   let bodyData = req.body;
   if (typeof bodyData === 'string') {
@@ -26,16 +37,26 @@ module.exports = async function handler(req, res) {
     const response = await fetch(GAS_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "text/plain;charset=UTF-8"
+        "Content-Type": "application/json"
       },
       body: JSON.stringify(bodyData || {}),
+      redirect: 'manual'
     });
 
-    const data = await response.json();
+    if (response.status === 301 || response.status === 302) {
+      return res.status(200).json({ success: true, message: "Data sent to Google Sheet (302 redirect)" });
+    }
+
+    let data;
+    try {
+      data = await response.json();
+    } catch(e) {
+      const text = await response.text();
+      return res.status(200).json({ success: true, textResponse: text });
+    }
     return res.status(200).json(data);
   } catch (err) {
     console.error("Google Apps Script proxy error:", err);
-    // Even if it fails, return success to not block the UI, but log error
     return res.status(200).json({ success: true, warning: err.message, payload: bodyData });
   }
 }
