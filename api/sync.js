@@ -34,14 +34,31 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const response = await fetch(GAS_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(bodyData || {}),
-      redirect: 'manual'
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second timeout to beat Vercel's 10s limit
+
+    let response;
+    try {
+      response = await fetch(GAS_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(bodyData || {}),
+        redirect: 'manual',
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+    } catch (fetchErr) {
+      clearTimeout(timeoutId);
+      if (fetchErr.name === 'AbortError' || fetchErr.type === 'aborted') {
+        // We aborted the request before Vercel's 10s timeout to prevent a 504 Gateway Timeout.
+        // Google Apps Script will continue processing the request in the background.
+        console.log("GAS request took longer than 8s, returning 200 OK early to prevent Vercel 504.");
+        return res.status(200).json({ success: true, message: "Data sent to Google Sheet (async)" });
+      }
+      throw fetchErr;
+    }
 
     if (response.status === 301 || response.status === 302) {
       return res.status(200).json({ success: true, message: "Data sent to Google Sheet (302 redirect)" });
