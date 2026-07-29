@@ -71,7 +71,64 @@ module.exports = async function handler(req, res) {
       return syncHandler.default ? syncHandler.default(req, res) : syncHandler(req, res);
     }
 
+    if (req.method === 'POST' && path_lower.includes("/api/upload-preview")) {
+      const { dataUrl, type, orderId } = req.body || {};
+      if (!dataUrl || !dataUrl.startsWith("data:")) {
+        return res.status(400).json({ error: "No valid data URL provided" });
+      }
+      const matches = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+      if (!matches) return res.status(400).json({ error: "Invalid data URL format" });
+
+      const mime = matches[1];
+      const base64Data = matches[2];
+      const buffer = Buffer.from(base64Data, "base64");
+
+      let ext = ".bin";
+      if (mime.includes("png")) ext = ".png";
+      else if (mime.includes("jpeg") || mime.includes("jpg")) ext = ".jpg";
+      else if (mime.includes("pdf")) ext = ".pdf";
+      else if (mime.includes("svg")) ext = ".svg";
+      else if (mime.includes("webp")) ext = ".webp";
+
+      const prefix = type === "pdf" ? "spec" : "preview";
+      const uniqueId = (orderId || "item") + "_" + Date.now();
+      const fileName = `${prefix}_${uniqueId}${ext}`;
+      
+      const os = require('os');
+      const filePath = path.join(os.tmpdir(), fileName);
+      try {
+        fs.writeFileSync(filePath, buffer);
+      } catch (e) {
+        console.warn("Could not write preview to tmp:", e);
+      }
+
+      const publicUrl = `/api/preview/${fileName}`;
+      return res.status(200).json({ success: true, url: publicUrl, fileName });
+    }
+
     if (req.method === 'GET') {
+      if (path_lower.includes("/api/preview/")) {
+        // Extract exact filename from req.url to preserve case (Linux tmp is case-sensitive)
+        const parsedPath = parsedUrl.pathname;
+        const fileName = parsedPath.split("/api/preview/")[1];
+        if (fileName) {
+          const os = require('os');
+          const filePath = path.join(os.tmpdir(), fileName);
+          if (fs.existsSync(filePath)) {
+            let contentType = "application/octet-stream";
+            if (fileName.toLowerCase().endsWith(".pdf")) contentType = "application/pdf";
+            else if (fileName.toLowerCase().endsWith(".jpg")) contentType = "image/jpeg";
+            else if (fileName.toLowerCase().endsWith(".png")) contentType = "image/png";
+            else if (fileName.toLowerCase().endsWith(".svg")) contentType = "image/svg+xml";
+            else if (fileName.toLowerCase().endsWith(".webp")) contentType = "image/webp";
+            
+            res.setHeader("Content-Type", contentType);
+            return res.status(200).send(fs.readFileSync(filePath));
+          }
+        }
+        return res.status(404).send("Preview not found (or expired in Vercel's temporary storage)");
+      }
+
       if (api_path === "api/icons") {
         const staticPath = path.join(API_MOCK_DIR, "icons.json");
         return sharedApi.handleIconsGet(req, res, { iconsJsonPath: staticPath, metaFilePath: META_FILE, iconDirPath: ICON_DIR });
