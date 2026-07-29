@@ -945,6 +945,12 @@ function logErrorToServer(message, payload, error) {
 
 // ─── Trigger sync on Add to Cart / Update Item ───────────────────────────────
 function triggerAddToCartSync() {
+  if (window.__cartSyncPending) {
+    console.log("[CartSync] Sync already in progress, ignoring duplicate trigger.");
+    return;
+  }
+  window.__cartSyncPending = true;
+
   const isEditing = !!localStorage.getItem("sc_editing_item_id");
   console.log(
     "[CartSync] Triggering " +
@@ -983,6 +989,7 @@ function triggerAddToCartSync() {
           window.location.href = "/orders?tab=cart";
         }, 1000);
       }
+      window.__cartSyncPending = false;
       return;
     }
 
@@ -1013,6 +1020,7 @@ function triggerAddToCartSync() {
         );
       })
       .finally(() => {
+        window.__cartSyncPending = false;
         if (isEditing) {
           localStorage.removeItem("sc_editing_item_id");
           localStorage.removeItem("sc_editing_item_data");
@@ -1025,6 +1033,12 @@ function triggerAddToCartSync() {
 
 // ─── Trigger sync on Confirm Order / Place Order / Checkout ───────────────────
 function triggerConfirmOrderSync() {
+  if (window.__cartSyncConfirmPending) {
+    console.log("[CartSync] Confirm Sync already in progress, ignoring duplicate.");
+    return;
+  }
+  window.__cartSyncConfirmPending = true;
+
   console.log("[CartSync] Triggering Confirm Order Google Sheets sync...");
   setTimeout(() => {
     syncCartToGoogleSheet(true)
@@ -1042,6 +1056,9 @@ function triggerConfirmOrderSync() {
       })
       .catch((err) => {
         console.error("[CartSync] Error syncing order:", err);
+      })
+      .finally(() => {
+        window.__cartSyncConfirmPending = false;
       });
   }, 400);}
 
@@ -1147,10 +1164,12 @@ function updateButtonLabelForEditMode() {
 }
 
 // ─── Global Event Listener for Cart Actions & Edit Item ───────────────────────
-document.addEventListener(
-  "click",
-  function (e) {
-    try {
+if (!window.__cartSyncListenerAdded) {
+  window.__cartSyncListenerAdded = true;
+  document.addEventListener(
+    "click",
+    function (e) {
+      try {
       const target = e.target;
       if (!target) return;
 
@@ -1189,6 +1208,7 @@ document.addEventListener(
   },
   false,
 );
+}
 
 // ─── Inject Sync Cart button ──────────────────────────────────────────────────
 function checkAndInjectSyncButton() {
