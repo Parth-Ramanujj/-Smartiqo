@@ -30,7 +30,10 @@ const JSONBLOB_URL = "https://jsonblob.com/api/jsonBlob/019fb04c-ee09-7c87-83e5-
 
 async function fetchRemoteUsers() {
   try {
-    const res = await fetch(JSONBLOB_URL);
+    const res = await fetch(JSONBLOB_URL, { 
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+    });
     if (!res.ok) return null;
     const data = await res.json();
     return data.users || null;
