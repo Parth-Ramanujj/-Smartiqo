@@ -144,19 +144,37 @@ module.exports = async function handler(req, res) {
     }
 
     let body = req.body || {};
-    // Fallback parsing if Vercel didn't parse it (e.g. if content-type missing)
+    // Fallback parsing for various content types
     if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch(e){}
+      try { 
+        body = JSON.parse(body); 
+      } catch(e) {
+        // Try URL-encoded form data (NextAuth sends application/x-www-form-urlencoded)
+        try {
+          const parsed = {};
+          new URLSearchParams(body).forEach((v, k) => { parsed[k] = v; });
+          if (Object.keys(parsed).length > 0) body = parsed;
+        } catch(e2) {}
+      }
     }
     
     let email = body.email || "";
     let password = body.password || "";
 
+    console.log("[AUTH] Login attempt for:", email);
+
     // 1. Fetch from JsonBlob permanent storage
     let remoteUsers = [];
     if (sharedApi.fetchRemoteUsers) {
-      const fetched = await sharedApi.fetchRemoteUsers();
-      if (fetched) remoteUsers = fetched;
+      try {
+        const fetched = await sharedApi.fetchRemoteUsers();
+        if (fetched) {
+          remoteUsers = fetched;
+          console.log("[AUTH] Fetched", remoteUsers.length, "users from JsonBlob");
+        }
+      } catch(e) {
+        console.error("[AUTH] JsonBlob fetch error:", e);
+      }
     }
     
     // 2. Fallback / Merge with disk/cookie users
@@ -165,6 +183,8 @@ module.exports = async function handler(req, res) {
     for (const u of localUsers) {
       if (!users.find(ru => ru.email === u.email)) users.push(u);
     }
+
+    console.log("[AUTH] Total users to check:", users.length, "emails:", users.map(u => u.email).join(", "));
 
     const foundUser = users.find(u => u.email === email && u.password === password);
     let user = foundUser;
