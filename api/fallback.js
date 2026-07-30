@@ -197,23 +197,6 @@ module.exports = async function handler(req, res) {
         if (fs.existsSync(global_settings)) return sendFile(global_settings);
       }
 
-      const sub_path = api_path.replace(/^api\//, '');
-      const nested_path = path.join(API_MOCK_DIR, `${sub_path}.json`);
-      if (fs.existsSync(nested_path)) return sendFile(nested_path);
-
-      const filename = `vdplshop.in_${api_path.replace(/\//g, '_')}.json`;
-      const candidates = [
-        path.join(API_MOCK_DIR, filename),
-        path.join(PAGES_DIR, filename)
-      ];
-      for (const c of candidates) {
-        if (fs.existsSync(c)) return sendFile(c);
-      }
-
-      const last_segment = sub_path.split("/").pop();
-      const direct_path = path.join(API_MOCK_DIR, `${last_segment}.json`);
-      if (fs.existsSync(direct_path)) return sendFile(direct_path);
-
       if (path_lower.includes("/api/config/google-sheet-url")) {
         const CONFIG_FILE = path.join(DIR, "config.json");
         let url = "";
@@ -243,6 +226,25 @@ module.exports = async function handler(req, res) {
       if (path_lower.includes("/api/auth/precheck")) {
         return res.status(200).json({ exists: false });
       }
+
+      const sub_path = api_path.replace(/^api\//, '');
+      const nested_path = path.join(API_MOCK_DIR, `${sub_path}.json`);
+      if (fs.existsSync(nested_path)) return sendFile(nested_path);
+
+      const filename = `vdplshop.in_${api_path.replace(/\//g, '_')}.json`;
+      const candidates = [
+        path.join(API_MOCK_DIR, filename),
+        path.join(PAGES_DIR, filename)
+      ];
+      for (const c of candidates) {
+        if (fs.existsSync(c)) return sendFile(c);
+      }
+
+      const last_segment = sub_path.split("/").pop();
+      const direct_path = path.join(API_MOCK_DIR, `${last_segment}.json`);
+      if (fs.existsSync(direct_path)) return sendFile(direct_path);
+
+      return res.status(200).json({});
 
       return res.status(200).json({});
     }

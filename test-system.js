@@ -67,10 +67,12 @@ async function startTests() {
 
   // 3. API Endpoints returning expected data
   await runTest('API: Access protected /api/auth/session route', async () => {
+    console.log("Sending cookie:", sessionCookie);
     const res = await fetch(`${BASE_URL}/api/auth/session`, {
       headers: { 'Cookie': sessionCookie }
     });
     const data = await res.json();
+    console.log("Received data:", data);
     if (!data.user || !data.user.email) throw new Error('Protected session data invalid');
   });
   
@@ -80,6 +82,7 @@ async function startTests() {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+    console.log("Orders response:", data);
     if (!Array.isArray(data.orders)) throw new Error('Expected orders array');
   });
 

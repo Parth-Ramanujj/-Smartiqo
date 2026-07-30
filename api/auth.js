@@ -101,9 +101,16 @@ module.exports = async function handler(req, res) {
       
       // Parse all cookies into an object for easier lookup
       const cookieObj = {};
-      const cookiePairs = cookies.split(';').map(c => c.trim().split('='));
-      for (const [k, v] of cookiePairs) {
-        if (k) cookieObj[k] = decodeURIComponent(v || "");
+      const cookiePairs = cookies.split(';');
+      for (const c of cookiePairs) {
+        const trimmed = c.trim();
+        if (!trimmed) continue;
+        const idx = trimmed.indexOf('=');
+        if (idx !== -1) {
+          const k = trimmed.substring(0, idx);
+          const v = trimmed.substring(idx + 1);
+          cookieObj[k] = decodeURIComponent(v || "");
+        }
       }
 
       const tokenStr = cookieObj['session_token'] || cookieObj['next-auth.session-token'] || cookieObj['__Secure-next-auth.session-token'];
