@@ -7,10 +7,13 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbzSTmI2W9J58MOC_fUEQad9
 
 module.exports = async function handler(req, res) {
   try {
-    // CORS Headers
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    if (res && res.setHeader) {
+      // CORS Headers
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+    }
 
     if (req.method === 'OPTIONS') {
       return res.status(200).end();
