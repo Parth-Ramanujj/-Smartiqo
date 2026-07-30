@@ -385,7 +385,7 @@ async function uploadPdfBlobToServer(blob) {
     });
     if (res.ok) {
       const data = await res.json();
-      if (data.url) return window.location.origin + data.url;
+      if (data.url) return data.url.startsWith("http") ? data.url : window.location.origin + data.url;
     }
   } catch (e) {
     console.warn("[CartSync] Failed to upload PDF blob:", e);
@@ -653,7 +653,7 @@ async function uploadBase64ToServer(dataUrl, type, orderId) {
       const data = await res.json();
       if (data.url) {
         // Return full URL so Google Sheets can access it
-        return window.location.origin + data.url;
+        return data.url.startsWith("http") ? data.url : window.location.origin + data.url;
       }
     }
   } catch (e) {
