@@ -106,7 +106,7 @@ module.exports = async function handler(req, res) {
         if (k) cookieObj[k] = decodeURIComponent(v || "");
       }
 
-      const tokenStr = cookieObj['session_token'] || cookieObj['next-auth.session-token'];
+      const tokenStr = cookieObj['session_token'] || cookieObj['next-auth.session-token'] || cookieObj['__Secure-next-auth.session-token'];
       const decodedUser = verifyToken(tokenStr);
 
       if (decodedUser) {
@@ -201,6 +201,7 @@ module.exports = async function handler(req, res) {
         res.setHeader('Set-Cookie', [
           `session_token=${secureToken}; Path=/; HttpOnly; SameSite=Lax`,
           `next-auth.session-token=${secureToken}; Path=/; HttpOnly; SameSite=Lax`,
+          `__Secure-next-auth.session-token=${secureToken}; Path=/; HttpOnly; SameSite=Lax; Secure`,
           `logged_in=yes; Path=/; SameSite=Lax`,
           `auth_email=${encodeURIComponent(user.email)}; Path=/; SameSite=Lax`,
           `auth_name=${encodeURIComponent(user.name)}; Path=/; SameSite=Lax`,
